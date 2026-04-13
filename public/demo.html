@@ -439,6 +439,47 @@
   }
   .pill .emoji { font-size: 20px; }
 
+  /* Speaker notes panel (toggle with 'n') */
+  .notes-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.92);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid #1e293b;
+    padding: 16px 30px;
+    z-index: 200;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    max-height: 180px;
+    overflow-y: auto;
+  }
+  .notes-panel.visible {
+    transform: translateY(0);
+  }
+  .notes-panel .notes-header {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: #06b6d4;
+    margin-bottom: 8px;
+  }
+  .notes-panel .notes-text {
+    font-size: 15px;
+    color: #cbd5e1;
+    line-height: 1.7;
+  }
+  .notes-panel .notes-timer {
+    position: absolute;
+    top: 16px;
+    right: 30px;
+    font-size: 12px;
+    color: #475569;
+    font-variant-numeric: tabular-nums;
+  }
+
   /* Animate elements within active slides */
   .slide.active .animate-in {
     animation: fadeInUp 0.6s ease forwards;
@@ -468,13 +509,20 @@
 <div class="orb orb-2"></div>
 <div class="orb orb-3"></div>
 
+<!-- Speaker Notes Panel (press N to toggle) -->
+<div class="notes-panel" id="notesPanel">
+  <div class="notes-header">Speaker Notes <span style="color:#475569;font-weight:400;">(press N to hide)</span></div>
+  <div class="notes-text" id="notesText"></div>
+  <div class="notes-timer" id="notesTimer">0:00</div>
+</div>
+
 <!-- Progress -->
 <div class="progress-wrap"><div class="progress-bar" id="progress"></div></div>
 <div class="slide-counter" id="counter">1 / 12</div>
-<div class="nav-hint">Space / Arrow keys to navigate</div>
+<div class="nav-hint">Space / Arrow keys &middot; N = speaker notes</div>
 
 <!-- ===== SLIDE 1: Title ===== -->
-<div class="slide active" data-slide="0">
+<div class="slide active" data-slide="0" data-note="This is RevShield — a Self-Healing Funnel AI. It automatically detects revenue leaks in your e-commerce funnel, scores their severity, diagnoses the root cause, and heals them — all in real time, with no manual intervention.">
   <div class="animate-in">
     <div class="title">RevShield</div>
   </div>
@@ -497,7 +545,7 @@
 </div>
 
 <!-- ===== SLIDE 2: The Problem ===== -->
-<div class="slide" data-slide="1">
+<div class="slide" data-slide="1" data-note="Here's the problem we're solving. A single undetected checkout issue can silently drain $4,600 in revenue every day. Conversion drops 15%, latency spikes to 3 seconds, error rates triple, and support tickets flood in. Most teams don't catch this for days.">
   <div class="animate-in">
     <div class="section-label">The Problem</div>
   </div>
@@ -530,7 +578,7 @@
 </div>
 
 <!-- ===== SLIDE 3: 5-Stage Pipeline ===== -->
-<div class="slide" data-slide="2">
+<div class="slide" data-slide="2" data-note="RevShield solves this with a 5-stage AI pipeline. Detect finds the leak. Score quantifies the risk. Diagnose pinpoints the root cause. Heal generates a remediation plan. Verify confirms recovery. The entire pipeline streams in real time via SSE so stakeholders see every step as it happens.">
   <div class="animate-in">
     <div class="section-label">The Solution: 5-Stage AI Pipeline</div>
   </div>
@@ -568,7 +616,7 @@
 </div>
 
 <!-- ===== SLIDE 4: Data Sources ===== -->
-<div class="slide" data-slide="3">
+<div class="slide" data-slide="3" data-note="It plugs into your existing stack. Upload a CSV, connect Google Sheets, pull live data from Shopify or Stripe APIs. Or use our Scenario Generator to simulate outages like payment gateway failures or CDN latency spikes. No vendor lock-in — bring your own data.">
   <div class="animate-in">
     <div class="section-label">Flexible Data Sources</div>
   </div>
@@ -591,7 +639,7 @@
 </div>
 
 <!-- ===== SLIDE 5: Funnel Leak Detection ===== -->
-<div class="slide" data-slide="4">
+<div class="slide" data-slide="4" data-note="In the Detect stage, we compare observed conversion rates against dynamic baselines for each segment. Here you can see the funnel for Paid Social on Mobile — sessions flow through normally until the Checkout to Paid stage, where we see a 16.5% drop. That's our leak.">
   <div class="animate-in">
     <div class="section-label">Stage 1: Detect</div>
   </div>
@@ -624,7 +672,7 @@
 </div>
 
 <!-- ===== SLIDE 6: RRAF Score ===== -->
-<div class="slide" data-slide="5">
+<div class="slide" data-slide="5" data-note="We then score the leak using our RRAF framework — Risk, Root Cause confidence, Affected Revenue, and Frequency. Each component is weighted. This incident scores 80 out of 100 — High Risk — driven by strong root cause signals at 100% and significant revenue impact at 78%.">
   <div class="animate-in">
     <div class="section-label">Stage 2: Score (RRAF Framework)</div>
   </div>
@@ -674,7 +722,7 @@
 </div>
 
 <!-- ===== SLIDE 7: LIFT Diagnosis ===== -->
-<div class="slide" data-slide="6">
+<div class="slide" data-slide="6" data-note="For diagnosis, we use the LIFT framework — Landing, Incentive, Friction, and Trust. The AI correlates multiple signals and identifies Friction as the primary cause, scoring 731. The evidence? Latency jumped 1,900 milliseconds, error rate spiked 3 points, and 96 checkout-related support tickets came in.">
   <div class="animate-in">
     <div class="section-label">Stage 3: Diagnose (LIFT Framework)</div>
   </div>
@@ -709,7 +757,7 @@
 </div>
 
 <!-- ===== SLIDE 8: Remediation ===== -->
-<div class="slide" data-slide="7">
+<div class="slide" data-slide="7" data-note="The Heal stage generates a prioritized action plan. This is flagged Critical Priority with a 1-2 day ETA. Five specific steps: investigate the API latency, review checkout error logs, roll back correlated changes, enable performance monitoring, and set up a simplified checkout fallback.">
   <div class="animate-in">
     <div class="section-label">Stage 4: Heal (Auto-Remediation)</div>
   </div>
@@ -742,7 +790,7 @@
 </div>
 
 <!-- ===== SLIDE 9: Impact Projection ===== -->
-<div class="slide" data-slide="8">
+<div class="slide" data-slide="8" data-note="Finally, we project the financial impact. If we do nothing, $32,000 is at risk over 7 days. With the recommended fix, we project recovering $16K to $29K depending on execution speed. The AI's confidence level is 85%, based on the strength of correlated signals.">
   <div class="animate-in">
     <div class="section-label">Stage 5: Verify & Project</div>
   </div>
@@ -771,7 +819,7 @@
 </div>
 
 <!-- ===== SLIDE 10: Before / After ===== -->
-<div class="slide" data-slide="9">
+<div class="slide" data-slide="9" data-note="Here's the before-during-after comparison. Checkout conversion dropped from 91% to 77.5% during the incident and recovered to 91.4% post-fix. Latency went from 1,200 to 3,100 milliseconds and came back down. Daily revenue fully recovered to $33,768. The self-healing worked.">
   <div class="animate-in">
     <div class="section-label">Before / During / After</div>
   </div>
@@ -816,7 +864,7 @@
 </div>
 
 <!-- ===== SLIDE 11: Interactive Drill-Downs ===== -->
-<div class="slide" data-slide="10">
+<div class="slide" data-slide="10" data-note="Everything on the dashboard is clickable. Click the RRAF score and you get a radar chart breakdown. Click LIFT diagnosis for a pie chart with evidence. Click any leak card, remediation step, impact projection, funnel stage, or incident — each opens a detailed drill-down modal with rich visualizations.">
   <div class="animate-in">
     <div class="section-label">Interactive Drill-Downs</div>
   </div>
@@ -869,7 +917,7 @@
 </div>
 
 <!-- ===== SLIDE 12: CTA ===== -->
-<div class="slide" data-slide="11">
+<div class="slide" data-slide="11" data-note="Stop losing revenue. Start self-healing. Try the live demo right now at rev-shield.vercel.app, or check out the source code on GitHub. Built with Next.js 16, TypeScript, Recharts, Framer Motion, and real-time SSE streaming. Thank you!">
   <div class="animate-in">
     <div class="title" style="font-size: 56px;">Stop Losing Revenue.</div>
   </div>
@@ -900,11 +948,40 @@ const slides = document.querySelectorAll('.slide');
 const total = slides.length;
 let current = 0;
 
+// Speaker notes
+const notesPanel = document.getElementById('notesPanel');
+const notesText = document.getElementById('notesText');
+const notesTimer = document.getElementById('notesTimer');
+let notesVisible = false;
+let timerStart = Date.now();
+let timerInterval = null;
+
+function updateTimer() {
+  const elapsed = Math.floor((Date.now() - timerStart) / 1000);
+  const min = Math.floor(elapsed / 60);
+  const sec = elapsed % 60;
+  notesTimer.textContent = min + ':' + (sec < 10 ? '0' : '') + sec;
+}
+
+function toggleNotes() {
+  notesVisible = !notesVisible;
+  notesPanel.classList.toggle('visible', notesVisible);
+  if (notesVisible && !timerInterval) {
+    timerStart = Date.now();
+    timerInterval = setInterval(updateTimer, 1000);
+  }
+  updateNotes();
+}
+
+function updateNotes() {
+  const note = slides[current].getAttribute('data-note') || 'No notes for this slide.';
+  notesText.textContent = note;
+}
+
 function goTo(idx) {
   if (idx < 0 || idx >= total) return;
   slides[current].classList.remove('active');
   slides[current].classList.add('exit');
-  setTimeout(() => slides[current === idx ? current : current].classList.remove('exit'), 800);
 
   const prev = current;
   current = idx;
@@ -916,6 +993,9 @@ function goTo(idx) {
   document.getElementById('progress').style.width = ((current + 1) / total * 100) + '%';
   document.getElementById('counter').textContent = (current + 1) + ' / ' + total;
 
+  // Update speaker notes
+  updateNotes();
+
   // Trigger animations for specific slides
   triggerSlideAnimations(current);
 }
@@ -926,6 +1006,7 @@ function prev() { goTo(current - 1); }
 document.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') { e.preventDefault(); next(); }
   if (e.key === 'ArrowLeft' || e.key === 'Backspace') { e.preventDefault(); prev(); }
+  if (e.key === 'n' || e.key === 'N') { e.preventDefault(); toggleNotes(); }
 });
 
 // Touch support
@@ -996,6 +1077,7 @@ document.addEventListener('keydown', (e) => {
 
 // Init
 document.getElementById('progress').style.width = (1 / total * 100) + '%';
+updateNotes();
 </script>
 </body>
 </html>
