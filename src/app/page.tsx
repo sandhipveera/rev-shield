@@ -13,6 +13,7 @@ import IncidentTimeline, { type HistoricalIncident } from "@/components/Incident
 import ThresholdConfig, { type Thresholds } from "@/components/ThresholdConfig";
 import ExportButton from "@/components/ExportButton";
 import DataSourcePanel, { type DataPayload } from "@/components/DataSourcePanel";
+import DrillDownModal, { type DrillDownType } from "@/components/DrillDownModal";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -71,6 +72,15 @@ export default function Home() {
   // External data source
   const [externalData, setExternalData] = useState<DataPayload | null>(null);
   const [dataSourceLabel, setDataSourceLabel] = useState<string>("Demo Data");
+
+  // Drill-down modal
+  const [drillDown, setDrillDown] = useState<{ isOpen: boolean; type: DrillDownType; data: any }>({ isOpen: false, type: null, data: null });
+  const openDrillDown = useCallback((type: DrillDownType, data: any) => {
+    setDrillDown({ isOpen: true, type, data });
+  }, []);
+  const closeDrillDown = useCallback(() => {
+    setDrillDown({ isOpen: false, type: null, data: null });
+  }, []);
 
   const handleDataReady = useCallback((data: DataPayload | null) => {
     setExternalData(data);
@@ -451,7 +461,11 @@ export default function Home() {
                 {/* Funnel visualization (#1) */}
                 <div className="bg-slate-900/60 border border-slate-700/50 rounded-2xl p-6">
                   <h3 className="text-xs text-slate-500 uppercase tracking-wider mb-4">Funnel Flow &mdash; Incident Segment</h3>
-                  {funnelStages.length > 0 && <FunnelVisualization stages={funnelStages} leakStageIndex={4} />}
+                  {funnelStages.length > 0 && <FunnelVisualization stages={funnelStages} leakStageIndex={4}
+                    onStageClick={(stage, idx) => openDrillDown("funnel-stage", {
+                      stageName: stage.label, observed: stage.value, baseline: stage.baseline,
+                      percentage: stage.baseline > 0 ? ((stage.value / stage.baseline) * 100).toFixed(1) : "N/A",
+                    })} />}
                 </div>
                 {/* Leak severity chart + cards */}
                 <div className="space-y-4">
@@ -474,7 +488,8 @@ export default function Home() {
                   {leaks.map((l: any, i: number) => (
                     <motion.div key={l.segment_key} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.1 }}
-                      className={`bg-slate-900/60 border rounded-xl p-4 flex items-center justify-between ${i === 0 ? "border-cyan-500/40" : "border-slate-700/50"}`}>
+                      onClick={() => openDrillDown("leak", { leak: l, leaks })}
+                      className={`bg-slate-900/60 border rounded-xl p-4 flex items-center justify-between cursor-pointer hover:border-cyan-400/50 transition-colors ${i === 0 ? "border-cyan-500/40" : "border-slate-700/50"}`}>
                       <div>
                         <span className={`inline-block text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border ${severityColor(l.severity)}`}>{l.severity}</span>
                         <p className="text-sm text-slate-300 mt-1 font-medium">{l.segment_key.replace(/_/g, " ")}</p>
@@ -498,9 +513,10 @@ export default function Home() {
         <AnimatePresence>
           {rraf && leak && (
             <motion.section initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mb-12">
-              <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-widest mb-4">Top Incident &mdash; Risk Score</h2>
+              <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-widest mb-4">Top Incident &mdash; Risk Score <span className="text-[10px] text-slate-600 normal-case tracking-normal font-normal ml-2">click to drill down</span></h2>
               <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                <div className="lg:col-span-3 bg-slate-900/60 border border-slate-700/50 rounded-2xl p-6">
+                <div className="lg:col-span-3 bg-slate-900/60 border border-slate-700/50 rounded-2xl p-6 cursor-pointer hover:border-cyan-500/40 transition-colors"
+                  onClick={() => openDrillDown("rraf", { rraf, leak })}>
                   <div className="flex items-start justify-between mb-6">
                     <div>
                       <span className={`inline-block text-xs font-bold uppercase px-3 py-1 rounded-full border ${severityColor(leak.severity)}`}>{leak.severity}</span>
@@ -582,7 +598,8 @@ export default function Home() {
           {diagnosis && (
             <motion.section initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mb-12">
               <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-widest mb-4">LIFT Diagnosis</h2>
-              <div className="bg-slate-900/60 border border-slate-700/50 rounded-2xl p-6">
+              <div className="bg-slate-900/60 border border-slate-700/50 rounded-2xl p-6 cursor-pointer hover:border-cyan-500/40 transition-colors"
+                onClick={() => openDrillDown("lift", { diagnosis })}>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                   <div>
                     <div className="flex gap-2 sm:gap-3 mb-4 flex-wrap">
@@ -642,7 +659,8 @@ export default function Home() {
           {remediation && (
             <motion.section initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mb-12">
               <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-widest mb-4">Remediation Plan</h2>
-              <div className="bg-slate-900/60 border border-slate-700/50 rounded-2xl p-6">
+              <div className="bg-slate-900/60 border border-slate-700/50 rounded-2xl p-6 cursor-pointer hover:border-cyan-500/40 transition-colors"
+                onClick={() => openDrillDown("remediation", { remediation, diagnosis })}>
                 <div className="flex flex-wrap items-center gap-3 mb-6">
                   <span className={`text-xs font-bold uppercase px-3 py-1 rounded-full border ${
                     remediation.priority === "critical" ? "bg-red-500/20 text-red-400 border-red-500/30"
@@ -662,8 +680,8 @@ export default function Home() {
                   ))}
                 </ul>
                 {impact && (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="bg-slate-800/40 rounded-xl p-4 border border-slate-700/30">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 cursor-pointer" onClick={() => openDrillDown("impact", { impact, leak })}>
+                    <div className="bg-slate-800/40 rounded-xl p-4 border border-slate-700/30 hover:border-cyan-500/40 transition-colors">
                       <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">7-Day Revenue at Risk</p>
                       <p className="text-xl font-bold text-red-400">${Math.round(impact.revenue_at_risk).toLocaleString()}</p>
                     </div>
@@ -779,7 +797,7 @@ export default function Home() {
             <motion.section initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mb-12">
               <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-widest mb-4">Incident History</h2>
               <div className="bg-slate-900/60 border border-slate-700/50 rounded-2xl p-6">
-                <IncidentTimeline incidents={incidents} />
+                <IncidentTimeline incidents={incidents} onIncidentClick={(incident) => openDrillDown("incident", incident)} />
               </div>
             </motion.section>
           )}
@@ -812,6 +830,9 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {/* Drill-down modal */}
+      <DrillDownModal isOpen={drillDown.isOpen} onClose={closeDrillDown} type={drillDown.type} data={drillDown.data} />
     </div>
   );
 }

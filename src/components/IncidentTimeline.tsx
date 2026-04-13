@@ -16,6 +16,7 @@ export interface HistoricalIncident {
 
 interface IncidentTimelineProps {
   incidents: HistoricalIncident[];
+  onIncidentClick?: (incident: HistoricalIncident) => void;
 }
 
 const statusColors: Record<string, string> = {
@@ -36,7 +37,7 @@ const severityBorder: Record<string, string> = {
   low: "border-green-500/40",
 };
 
-export default function IncidentTimeline({ incidents }: IncidentTimelineProps) {
+export default function IncidentTimeline({ incidents, onIncidentClick }: IncidentTimelineProps) {
   return (
     <div className="relative">
       {/* Vertical line */}
@@ -57,7 +58,8 @@ export default function IncidentTimeline({ incidents }: IncidentTimelineProps) {
             </div>
 
             {/* Card */}
-            <div className={`flex-1 bg-slate-900/60 border ${severityBorder[incident.severity]} rounded-xl p-4`}>
+            <div className={`flex-1 bg-slate-900/60 border ${severityBorder[incident.severity]} rounded-xl p-4 ${onIncidentClick ? "cursor-pointer hover:border-cyan-500/40 transition-colors" : ""}`}
+              onClick={() => onIncidentClick?.(incident)}>
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <div className="flex items-center gap-2 mb-1">

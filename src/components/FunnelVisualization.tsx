@@ -11,9 +11,10 @@ interface FunnelStage {
 interface FunnelVisualizationProps {
   stages: FunnelStage[];
   leakStageIndex: number; // which stage has the leak
+  onStageClick?: (stage: FunnelStage, index: number) => void;
 }
 
-export default function FunnelVisualization({ stages, leakStageIndex }: FunnelVisualizationProps) {
+export default function FunnelVisualization({ stages, leakStageIndex, onStageClick }: FunnelVisualizationProps) {
   const maxValue = stages[0]?.value ?? 1;
 
   return (
@@ -27,7 +28,8 @@ export default function FunnelVisualization({ stages, leakStageIndex }: FunnelVi
           const dropFromBaseline = stage.baseline > 0 ? ((stage.baseline - stage.value) / stage.baseline) * 100 : 0;
 
           return (
-            <div key={stage.label} className="w-full flex flex-col items-center">
+            <div key={stage.label} className={`w-full flex flex-col items-center ${onStageClick ? "cursor-pointer" : ""}`}
+              onClick={() => onStageClick?.(stage, i)}>
               {/* Stage row */}
               <div className="w-full flex items-center gap-4">
                 {/* Label */}
