@@ -57,6 +57,7 @@ export default function Home() {
   const [verified, setVerified] = useState(false);
   const [aiNarrative, setAiNarrative] = useState<string | null>(null);
   const [tickerActive, setTickerActive] = useState(false);
+  const [noLeaks, setNoLeaks] = useState(false);
 
   // Thresholds
   const [thresholds, setThresholds] = useState<Thresholds>({
@@ -100,6 +101,7 @@ export default function Home() {
     setVerified(false);
     setAiNarrative(null);
     setTickerActive(false);
+    setNoLeaks(false);
     setCompletedSteps(new Set());
 
     const stageMap: Record<string, number> = { detect: 0, score: 1, diagnose: 2, heal: 3, verify: 4 };
@@ -185,6 +187,11 @@ export default function Home() {
                   }
                   return updated;
                 });
+              } else {
+                // No leaks detected
+                setNoLeaks(true);
+                setCompletedSteps(new Set([0, 1, 2, 3, 4]));
+                playSfx("playSuccess");
               }
               setVerified(true);
               setTickerActive(false);
@@ -778,8 +785,28 @@ export default function Home() {
           )}
         </AnimatePresence>
 
+        {/* No leaks detected */}
+        {noLeaks && !isRunning && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="mt-8 border border-emerald-500/30 bg-emerald-900/20 rounded-2xl p-8 text-center"
+          >
+            <div className="text-5xl mb-4">&#x2705;</div>
+            <h3 className="text-2xl font-bold text-emerald-400 mb-2">Funnel is Healthy</h3>
+            <p className="text-slate-400 max-w-lg mx-auto">
+              No revenue leaks detected. All funnel stages are operating within baseline parameters.
+              {externalData?.source === "shopify" && (
+                <span className="block mt-2 text-xs text-slate-500">
+                  Tip: For a more comprehensive analysis, try loading more days of data or use the Scenario Generator to simulate degradation patterns.
+                </span>
+              )}
+            </p>
+          </motion.div>
+        )}
+
         {/* Footer */}
-        {!hasResults && !isRunning && (
+        {!hasResults && !noLeaks && !isRunning && (
           <div className="text-center text-slate-600 text-sm mt-8">
             Press <span className="text-slate-400 font-medium">Analyze Funnel</span> to run the self-healing pipeline
           </div>
