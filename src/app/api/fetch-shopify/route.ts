@@ -17,6 +17,7 @@ interface ShopifyOrder {
   cart_token?: string;
   checkout_token?: string;
   gateway?: string;
+  tags?: string;
 }
 
 export async function POST(request: Request) {
@@ -124,7 +125,7 @@ function transformShopifyData(
 
   for (const order of orders) {
     const date = order.created_at.slice(0, 10);
-    const channel = classifyChannel(order.source_name, order.referring_site);
+    const channel = classifyChannel(order.source_name, order.referring_site, order.tags);
     if (!grouped[date]) grouped[date] = {};
     if (!grouped[date][channel]) grouped[date][channel] = [];
     grouped[date][channel].push(order);
@@ -136,7 +137,7 @@ function transformShopifyData(
   for (const [date, channels] of Object.entries(grouped)) {
     for (const [channel, channelOrders] of Object.entries(channels)) {
       const paid = channelOrders.filter((o) => o.financial_status === "paid" || o.financial_status === "partially_paid");
-      const failed = channelOrders.filter((o) => o.financial_status === "voided" || o.financial_status === "refunded");
+      const failed = channelOrders.filter((o) => o.financial_status === "voided" || o.financial_status === "refunded" || o.cancelled_at);
       const totalOrders = channelOrders.length;
       const paidOrders = paid.length;
       const totalRevenue = paid.reduce((s, o) => s + parseFloat(o.total_price || "0"), 0);
@@ -212,10 +213,24 @@ function transformShopifyData(
   return { funnelData, baselines, paymentEvents, supportTickets: [] };
 }
 
-function classifyChannel(sourceName?: string, referringSite?: string): string {
+function classifyChannel(sourceName?: string, referringSite?: string, tags?: string): string {
   const src = (sourceName || "").toLowerCase();
   const ref = (referringSite || "").toLowerCase();
+  const t = (tags || "").toLowerCase();
 
+  // Check tags first (set by our order generator)
+  if (t.includes("paid_social")) return "Paid Social";
+  if (t.includes("paid_search")) return "Paid Search";
+  if (t.includes("email")) return "Email";
+  if (t.includes("direct")) return "Direct";
+
+  // Check source_name (custom app sources)
+  if (src.includes("social")) return "Paid Social";
+  if (src.includes("search")) return "Paid Search";
+  if (src.includes("email")) return "Email";
+  if (src.includes("direct")) return "Direct";
+
+  // Check referring site
   if (src === "web" && ref.includes("google")) return "Organic Search";
   if (src === "web" && ref.includes("facebook")) return "Paid Social";
   if (src === "web" && ref.includes("instagram")) return "Paid Social";
