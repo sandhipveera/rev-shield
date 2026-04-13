@@ -12,6 +12,7 @@ import BeforeAfterComparison from "@/components/BeforeAfterComparison";
 import IncidentTimeline, { type HistoricalIncident } from "@/components/IncidentTimeline";
 import ThresholdConfig, { type Thresholds } from "@/components/ThresholdConfig";
 import ExportButton from "@/components/ExportButton";
+import DataSourcePanel, { type DataPayload } from "@/components/DataSourcePanel";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -66,6 +67,19 @@ export default function Home() {
   // Incident history (combine current with historical)
   const [incidents, setIncidents] = useState<HistoricalIncident[]>(HISTORICAL_INCIDENTS);
 
+  // External data source
+  const [externalData, setExternalData] = useState<DataPayload | null>(null);
+  const [dataSourceLabel, setDataSourceLabel] = useState<string>("Demo Data");
+
+  const handleDataReady = useCallback((data: DataPayload | null) => {
+    setExternalData(data);
+    if (data) {
+      setDataSourceLabel(data.meta?.description || data.source.toUpperCase());
+    } else {
+      setDataSourceLabel("Demo Data");
+    }
+  }, []);
+
   const { playAlert, playDetect, playScore, playDiagnose, playHeal, playSuccess } = useSoundEffects();
   const sfx = useRef({ playAlert, playDetect, playScore, playDiagnose, playHeal, playSuccess });
   useEffect(() => { sfx.current = { playAlert, playDetect, playScore, playDiagnose, playHeal, playSuccess }; });
@@ -101,6 +115,13 @@ export default function Home() {
             revenue: thresholds.rrafWeightRevenue,
             frequency: thresholds.rrafWeightFrequency,
           },
+          // Pass external data if available (null = use seed data)
+          ...(externalData ? {
+            funnelData: externalData.funnelData,
+            baselines: externalData.baselines,
+            paymentEvents: externalData.paymentEvents,
+            supportTickets: externalData.supportTickets,
+          } : {}),
         }),
       });
 
@@ -208,7 +229,7 @@ export default function Home() {
     } finally {
       setIsRunning(false);
     }
-  }, [isRunning, thresholds, playSfx, topIncident]);
+  }, [isRunning, thresholds, playSfx, topIncident, externalData]);
 
   // Fetch AI narrative when topIncident is fully loaded and verified
   useEffect(() => {
@@ -309,6 +330,24 @@ export default function Home() {
             </div>
           </div>
         </header>
+
+        {/* ================================================================
+            DATA SOURCE PANEL
+        ================================================================ */}
+        <section className="mb-6">
+          <DataSourcePanel onDataReady={handleDataReady} isRunning={isRunning} />
+          {externalData && (
+            <div className="mt-2 flex items-center gap-2 text-xs text-cyan-400">
+              <span className="inline-block w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
+              Data loaded: {dataSourceLabel}
+              {externalData.meta && (
+                <span className="text-slate-500">
+                  ({externalData.meta.rowCount} rows, {externalData.meta.segments.length} segments, {externalData.meta.dateRange.from} to {externalData.meta.dateRange.to})
+                </span>
+              )}
+            </div>
+          )}
+        </section>
 
         {/* ================================================================
             PIPELINE VISUALIZATION

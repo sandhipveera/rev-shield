@@ -1,4 +1,4 @@
-import { funnelData, baselines, paymentEvents, supportTickets } from "@/lib/data";
+import { funnelData as seedFunnelData, baselines as seedBaselines, paymentEvents as seedPaymentEvents, supportTickets as seedSupportTickets, type FunnelMetric, type SegmentBaseline, type PaymentEvent, type SupportTicket } from "@/lib/data";
 import {
   detectLeaks,
   calculateRRAF,
@@ -10,6 +10,12 @@ import {
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const weights = body.weights as { risk?: number; rootCause?: number; revenue?: number; frequency?: number } | undefined;
+
+  // Accept external data or fall back to seed data
+  const funnelData: FunnelMetric[] = body.funnelData ?? seedFunnelData;
+  const baselines: SegmentBaseline[] = body.baselines ?? seedBaselines;
+  const paymentEvents: PaymentEvent[] = body.paymentEvents ?? seedPaymentEvents;
+  const supportTickets: SupportTicket[] = body.supportTickets ?? seedSupportTickets;
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({

@@ -1,0 +1,25 @@
+date,segment_key,channel,device,sessions,view_item,add_to_cart,begin_checkout,paid_orders,payment_success_rate,aov,latency_ms,error_rate,tickets,bounce_rate,promo_error_rate,net_revenue
+2026-03-28,paid_social_mobile,Paid Social,Mobile,5044,3632,763,427,390,0.913,84,1180,0.011,7,0.41,0.005,32760
+2026-03-29,paid_social_mobile,Paid Social,Mobile,5096,3669,770,431,394,0.914,85,1195,0.012,8,0.41,0.005,33490
+2026-03-30,paid_social_mobile,Paid Social,Mobile,5148,3707,778,436,398,0.912,84,1210,0.012,9,0.41,0.005,33432
+2026-03-31,paid_social_mobile,Paid Social,Mobile,5200,3744,786,440,402,0.914,84,1200,0.012,8,0.41,0.005,33768
+2026-04-01,paid_social_mobile,Paid Social,Mobile,5252,3781,794,445,406,0.913,85,1190,0.011,7,0.41,0.005,34510
+2026-04-02,paid_social_mobile,Paid Social,Mobile,5044,3632,763,427,389,0.911,84,1200,0.012,8,0.41,0.005,32676
+2026-04-03,paid_social_mobile,Paid Social,Mobile,5096,3669,770,431,393,0.912,84,1210,0.012,8,0.41,0.005,33012
+2026-04-04,paid_social_mobile,Paid Social,Mobile,5148,3707,778,436,397,0.910,84,1220,0.013,9,0.41,0.005,33348
+2026-04-05,paid_social_mobile,Paid Social,Mobile,5200,3744,786,440,374,0.850,82,1850,0.028,22,0.43,0.012,30668
+2026-04-06,paid_social_mobile,Paid Social,Mobile,5252,3781,794,445,360,0.809,81,2400,0.035,38,0.44,0.018,29160
+2026-04-07,paid_social_mobile,Paid Social,Mobile,5044,3632,763,427,343,0.803,80,2600,0.038,53,0.45,0.022,27440
+2026-04-08,paid_social_mobile,Paid Social,Mobile,5096,3669,770,431,334,0.775,79,3100,0.042,75,0.46,0.025,26386
+2026-04-09,paid_social_mobile,Paid Social,Mobile,5148,3707,778,436,364,0.835,82,2400,0.030,45,0.43,0.015,29848
+2026-04-10,paid_social_mobile,Paid Social,Mobile,5200,3744,786,440,402,0.914,84,1230,0.013,10,0.41,0.005,33768
+2026-03-28,paid_search_mobile,Paid Search,Mobile,4656,3445,758,440,405,0.920,88,1100,0.011,6,0.41,0.004,35640
+2026-03-31,paid_search_mobile,Paid Search,Mobile,4800,3552,781,453,417,0.921,88,1100,0.011,6,0.41,0.004,36696
+2026-04-04,paid_search_mobile,Paid Search,Mobile,4752,3516,774,449,413,0.920,88,1100,0.011,6,0.41,0.004,36344
+2026-04-07,paid_search_mobile,Paid Search,Mobile,4656,3445,758,440,405,0.920,88,1100,0.011,6,0.41,0.004,35640
+2026-04-10,paid_search_mobile,Paid Search,Mobile,4800,3552,781,453,417,0.921,88,1100,0.011,6,0.41,0.004,36696
+2026-03-28,email_desktop,Email,Desktop,3395,2648,636,394,371,0.942,92,950,0.009,4,0.38,0.004,34132
+2026-03-31,email_desktop,Email,Desktop,3500,2730,655,406,382,0.941,92,955,0.009,4,0.38,0.004,35144
+2026-04-04,email_desktop,Email,Desktop,3465,2703,649,402,378,0.940,92,960,0.009,4,0.38,0.004,34776
+2026-04-07,email_desktop,Email,Desktop,3430,2675,642,398,375,0.942,92,950,0.009,4,0.38,0.004,34500
+2026-04-10,email_desktop,Email,Desktop,3500,2730,655,406,382,0.941,92,955,0.009,4,0.38,0.004,35144
