@@ -152,8 +152,13 @@ export function detectLeaks(
 export function calculateRRAF(
   leak: Leak,
   funnelData: FunnelMetric[],
-  baselines: SegmentBaseline[]
+  baselines: SegmentBaseline[],
+  weights?: { risk?: number; rootCause?: number; revenue?: number; frequency?: number }
 ): RRAFScore {
+  const wR = weights?.risk ?? 0.30;
+  const wRC = weights?.rootCause ?? 0.20;
+  const wA = weights?.revenue ?? 0.35;
+  const wF = weights?.frequency ?? 0.15;
   const baseline = baselines.find(
     (b) => b.segment_key === leak.segment_key
   );
@@ -229,10 +234,10 @@ export function calculateRRAF(
   // --- Composite RRAF ---
   const total =
     100 *
-    (0.3 * risk +
-      0.2 * rootCauseConfidence +
-      0.35 * affectedRevenue +
-      0.15 * frequency);
+    (wR * risk +
+      wRC * rootCauseConfidence +
+      wA * affectedRevenue +
+      wF * frequency);
 
   return {
     total: Math.round(total * 100) / 100,
