@@ -1,65 +1,701 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  Cell,
+} from "recharts";
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+// ---------------------------------------------------------------------------
+// Pipeline stages
+// ---------------------------------------------------------------------------
+
+const PIPELINE_STAGES = [
+  { id: "detect", label: "Detect", icon: "\ud83d\udd0d" },
+  { id: "score", label: "Score", icon: "\ud83d\udcca" },
+  { id: "diagnose", label: "Diagnose", icon: "\ud83e\ude7a" },
+  { id: "heal", label: "Heal", icon: "\u2728" },
+  { id: "verify", label: "Verify", icon: "\u2705" },
+] as const;
+
+const LIFT_ICONS: Record<string, string> = {
+  Landing: "\ud83d\udec2",
+  Incentive: "\ud83c\udfaf",
+  Friction: "\u26a0\ufe0f",
+  Trust: "\ud83d\udd12",
+};
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 
 export default function Home() {
+  const [activeStep, setActiveStep] = useState<number>(-1);
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  const [isRunning, setIsRunning] = useState(false);
+
+  // API data states
+  const [leaks, setLeaks] = useState<any[] | null>(null);
+  const [topIncident, setTopIncident] = useState<any | null>(null);
+  const [verified, setVerified] = useState(false);
+  const [aiNarrative, setAiNarrative] = useState<string | null>(null);
+
+  const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  const fetchStep = async (step: string) => {
+    const res = await fetch("/api/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ step }),
+    });
+    return res.json();
+  };
+
+  const runAnalysis = useCallback(async () => {
+    if (isRunning) return;
+    setIsRunning(true);
+    setLeaks(null);
+    setTopIncident(null);
+    setVerified(false);
+    setAiNarrative(null);
+    setCompletedSteps(new Set());
+
+    try {
+      // Step 0: Detect
+      setActiveStep(0);
+      await wait(800);
+      const detectData = await fetchStep("detect");
+      setLeaks(detectData.leaks);
+      setCompletedSteps((s) => new Set(s).add(0));
+
+      // Step 1: Score
+      setActiveStep(1);
+      await wait(600);
+      const scoreData = await fetchStep("score");
+      setTopIncident(scoreData.topIncident);
+      setCompletedSteps((s) => new Set(s).add(1));
+
+      // Step 2: Diagnose
+      setActiveStep(2);
+      await wait(800);
+      const diagData = await fetchStep("diagnose");
+      setTopIncident(diagData.topIncident);
+      setCompletedSteps((s) => new Set(s).add(2));
+
+      // Step 3: Heal (remediate)
+      setActiveStep(3);
+      await wait(600);
+      const remData = await fetchStep("remediate");
+      setTopIncident(remData.topIncident);
+      setCompletedSteps((s) => new Set(s).add(3));
+
+      // Step 4: Verify (project impact)
+      setActiveStep(4);
+      await wait(400);
+      const fullData = await fetchStep("project");
+      setTopIncident(fullData.topIncident);
+      setVerified(true);
+      setCompletedSteps((s) => new Set(s).add(4));
+
+      // Try to get AI narrative
+      try {
+        const aiRes = await fetch("/api/ai-narrative", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ incident: fullData.topIncident }),
+        });
+        if (aiRes.ok) {
+          const aiData = await aiRes.json();
+          setAiNarrative(aiData.narrative);
+        }
+      } catch {
+        // AI narrative is optional
+      }
+
+      await wait(300);
+      setActiveStep(-1);
+    } catch (err) {
+      console.error("Analysis failed:", err);
+    } finally {
+      setIsRunning(false);
+    }
+  }, [isRunning]);
+
+  // ---------------------------------------------------------------------------
+  // Derived display data
+  // ---------------------------------------------------------------------------
+
+  const leak = topIncident?.leak;
+  const rraf = topIncident?.rraf;
+  const diagnosis = topIncident?.diagnosis;
+  const remediation = topIncident?.remediation;
+  const impact = topIncident?.impact;
+
+  const severityColor = (s: string) => {
+    if (s === "high") return "bg-red-500/20 text-red-400 border-red-500/30";
+    if (s === "medium") return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+    return "bg-green-500/20 text-green-400 border-green-500/30";
+  };
+
+  // Funnel chart data from leaks
+  const funnelChartData = leaks
+    ? leaks.map((l: any) => ({
+        segment: l.segment_key.replace(/_/g, " "),
+        magnitude: Math.round(l.magnitude * 100),
+        revenue_lost: Math.round(l.estimated_revenue_lost),
+        severity: l.severity,
+      }))
+    : [];
+
+  // LIFT chart data
+  const liftChartData = diagnosis
+    ? diagnosis.hypotheses.map((h: any) => ({
+        category: h.category,
+        score: h.score,
+        isTop: h.category === diagnosis.top_category,
+      }))
+    : [];
+
+  const hasResults = leaks || topIncident;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="min-h-screen bg-[#0a0a1a] text-white font-sans selection:bg-cyan-500/30">
+      {/* Subtle grid background */}
+      <div
+        className="fixed inset-0 pointer-events-none opacity-[0.03]"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(6,182,212,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(6,182,212,0.3) 1px, transparent 1px)",
+          backgroundSize: "60px 60px",
+        }}
+      />
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* ================================================================
+            HEADER
+        ================================================================ */}
+        <header className="flex items-center justify-between mb-12">
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+              RevShield
+            </h1>
+            <p className="text-sm text-slate-400 mt-1 tracking-wide">
+              Self-Healing Funnel AI
+            </p>
+          </div>
+          <div className="flex items-center gap-2 bg-slate-800/60 border border-slate-700/50 rounded-full px-4 py-2">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
+            </span>
+            <span className="text-xs text-green-400 font-medium">System Active</span>
+          </div>
+        </header>
+
+        {/* ================================================================
+            PIPELINE VISUALIZATION
+        ================================================================ */}
+        <section className="mb-12">
+          <div className="flex items-center justify-center gap-0">
+            {PIPELINE_STAGES.map((stage, i) => {
+              const isActive = activeStep === i;
+              const isComplete = completedSteps.has(i);
+              return (
+                <div key={stage.id} className="flex items-center">
+                  <motion.div
+                    className={`
+                      relative flex flex-col items-center justify-center
+                      w-28 h-24 rounded-2xl border transition-all duration-300
+                      ${
+                        isActive
+                          ? "bg-cyan-500/10 border-cyan-400/60 shadow-[0_0_30px_rgba(6,182,212,0.3)]"
+                          : isComplete
+                          ? "bg-cyan-500/5 border-cyan-500/30"
+                          : "bg-slate-800/40 border-slate-700/40"
+                      }
+                    `}
+                    animate={
+                      isActive
+                        ? { scale: [1, 1.05, 1], transition: { repeat: Infinity, duration: 1.2 } }
+                        : { scale: 1 }
+                    }
+                  >
+                    <span className="text-2xl mb-1">{stage.icon}</span>
+                    <span
+                      className={`text-xs font-semibold tracking-wide ${
+                        isActive ? "text-cyan-300" : isComplete ? "text-cyan-400/80" : "text-slate-500"
+                      }`}
+                    >
+                      {stage.label}
+                    </span>
+                    {isComplete && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-cyan-500 rounded-full flex items-center justify-center"
+                      >
+                        <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </motion.div>
+                    )}
+                  </motion.div>
+                  {i < PIPELINE_STAGES.length - 1 && (
+                    <div className="flex items-center mx-1">
+                      <div className={`w-8 h-0.5 transition-colors duration-500 ${completedSteps.has(i) ? "bg-cyan-500/60" : "bg-slate-700/40"}`} />
+                      <svg className={`w-3 h-3 -ml-1 transition-colors duration-500 ${completedSteps.has(i) ? "text-cyan-500/60" : "text-slate-700/40"}`} fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* ================================================================
+            MAIN ACTION BUTTON
+        ================================================================ */}
+        <section className="flex justify-center mb-16">
+          <motion.button
+            onClick={runAnalysis}
+            disabled={isRunning}
+            className={`
+              relative px-10 py-4 rounded-2xl font-semibold text-lg transition-all duration-300 cursor-pointer
+              ${
+                isRunning
+                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
+                  : "bg-cyan-500 text-white hover:bg-cyan-400 shadow-[0_0_40px_rgba(6,182,212,0.4)] hover:shadow-[0_0_60px_rgba(6,182,212,0.6)]"
+              }
+            `}
+            whileHover={!isRunning ? { scale: 1.03 } : {}}
+            whileTap={!isRunning ? { scale: 0.97 } : {}}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+            {isRunning ? (
+              <span className="flex items-center gap-3">
+                <motion.span
+                  className="inline-block w-5 h-5 border-2 border-cyan-300 border-t-transparent rounded-full"
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }}
+                />
+                Analyzing Funnel...
+              </span>
+            ) : (
+              "Analyze Funnel"
+            )}
+            {!isRunning && (
+              <motion.div
+                className="absolute inset-0 rounded-2xl border-2 border-cyan-400/50"
+                animate={{ scale: [1, 1.05, 1], opacity: [0.5, 0, 0.5] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+              />
+            )}
+          </motion.button>
+        </section>
+
+        {/* ================================================================
+            LEAKS OVERVIEW
+        ================================================================ */}
+        <AnimatePresence>
+          {leaks && leaks.length > 0 && (
+            <motion.section initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mb-12">
+              <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-widest mb-4">
+                Detected Revenue Leaks
+              </h2>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Leak severity chart */}
+                <div className="bg-slate-900/60 border border-slate-700/50 rounded-2xl p-6">
+                  <h3 className="text-xs text-slate-500 uppercase tracking-wider mb-4">Drop Magnitude by Segment</h3>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={funnelChartData} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                      <XAxis type="number" tick={{ fill: "#64748b", fontSize: 12 }} unit="%" />
+                      <YAxis type="category" dataKey="segment" tick={{ fill: "#94a3b8", fontSize: 11 }} width={120} />
+                      <Tooltip
+                        contentStyle={{ background: "#0f172a", border: "1px solid #334155", borderRadius: "12px", fontSize: "12px" }}
+                        labelStyle={{ color: "#94a3b8" }}
+                      />
+                      <Bar dataKey="magnitude" radius={[0, 6, 6, 0]}>
+                        {funnelChartData.map((entry: any, index: number) => (
+                          <Cell key={index} fill={entry.severity === "high" ? "#ef4444" : entry.severity === "medium" ? "#eab308" : "#22c55e"} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                {/* Leak summary cards */}
+                <div className="space-y-3">
+                  {leaks.map((l: any, i: number) => (
+                    <motion.div
+                      key={l.segment_key}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      className={`bg-slate-900/60 border rounded-xl p-4 flex items-center justify-between ${
+                        i === 0 ? "border-cyan-500/40" : "border-slate-700/50"
+                      }`}
+                    >
+                      <div>
+                        <span className={`inline-block text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border ${severityColor(l.severity)}`}>
+                          {l.severity}
+                        </span>
+                        <p className="text-sm text-slate-300 mt-1 font-medium">{l.segment_key.replace(/_/g, " ")}</p>
+                        <p className="text-xs text-slate-500">{l.stage.replace(/_/g, " ")}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-red-400">${Math.round(l.estimated_revenue_lost).toLocaleString()}</p>
+                        <p className="text-xs text-slate-500">daily loss</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </motion.section>
+          )}
+        </AnimatePresence>
+
+        {/* ================================================================
+            TOP INCIDENT - RRAF SCORE
+        ================================================================ */}
+        <AnimatePresence>
+          {rraf && leak && (
+            <motion.section initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mb-12">
+              <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-widest mb-4">
+                Top Incident - Risk Score
+              </h2>
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                {/* Left: Incident Card (3/5) */}
+                <div className="lg:col-span-3 bg-slate-900/60 border border-slate-700/50 rounded-2xl p-6">
+                  <div className="flex items-start justify-between mb-6">
+                    <div>
+                      <span className={`inline-block text-xs font-bold uppercase px-3 py-1 rounded-full border ${severityColor(leak.severity)}`}>
+                        {leak.severity}
+                      </span>
+                      <p className="text-slate-400 text-sm mt-3">Funnel Stage</p>
+                      <p className="text-white font-semibold text-lg">Checkout &rarr; Payment</p>
+                      <div className="flex gap-3 mt-3">
+                        <span className="text-xs bg-slate-800 text-slate-300 px-3 py-1 rounded-full border border-slate-700/50">
+                          {leak.segment_key.replace(/_/g, " ")}
+                        </span>
+                      </div>
+                    </div>
+                    {/* RRAF Score Circle */}
+                    <div className="flex flex-col items-center">
+                      <div className="relative w-28 h-28">
+                        <svg className="w-28 h-28 -rotate-90" viewBox="0 0 100 100">
+                          <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(51,65,85,0.5)" strokeWidth="8" />
+                          <motion.circle
+                            cx="50" cy="50" r="42" fill="none"
+                            stroke={rraf.total >= 70 ? "#ef4444" : rraf.total >= 40 ? "#eab308" : "#22c55e"}
+                            strokeWidth="8" strokeLinecap="round"
+                            strokeDasharray={2 * Math.PI * 42}
+                            initial={{ strokeDashoffset: 2 * Math.PI * 42 }}
+                            animate={{ strokeDashoffset: 2 * Math.PI * 42 * (1 - rraf.total / 100) }}
+                            transition={{ duration: 1.2, ease: "easeOut" }}
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <span className="text-3xl font-bold text-cyan-400">{Math.round(rraf.total)}</span>
+                          <span className="text-[10px] text-slate-500 uppercase tracking-wider">RRAF</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* RRAF Breakdown */}
+                  <div className="grid grid-cols-4 gap-3">
+                    {[
+                      { label: "Risk", value: rraf.risk, weight: "30%" },
+                      { label: "Root Cause", value: rraf.root_cause_confidence, weight: "20%" },
+                      { label: "Revenue", value: rraf.affected_revenue, weight: "35%" },
+                      { label: "Frequency", value: rraf.frequency, weight: "15%" },
+                    ].map((c) => (
+                      <div key={c.label} className="bg-slate-800/40 rounded-lg p-3 text-center">
+                        <p className="text-[10px] text-slate-500 uppercase">{c.label}</p>
+                        <p className="text-lg font-bold text-white">{(c.value * 100).toFixed(0)}%</p>
+                        <div className="mt-1 h-1 bg-slate-700/50 rounded-full overflow-hidden">
+                          <motion.div
+                            className="h-full bg-cyan-500 rounded-full"
+                            initial={{ width: "0%" }}
+                            animate={{ width: `${c.value * 100}%` }}
+                            transition={{ duration: 0.8 }}
+                          />
+                        </div>
+                        <p className="text-[9px] text-slate-600 mt-1">weight: {c.weight}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Right: Key Metrics (2/5) */}
+                <div className="lg:col-span-2 grid grid-cols-1 gap-4">
+                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
+                    className="bg-slate-900/60 border border-slate-700/50 rounded-2xl p-5">
+                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Revenue at Risk</p>
+                    <p className="text-3xl font-bold text-red-400">${Math.round(leak.estimated_revenue_lost).toLocaleString()}</p>
+                    <p className="text-xs text-red-400/70 mt-1">per day</p>
+                  </motion.div>
+                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}
+                    className="bg-slate-900/60 border border-slate-700/50 rounded-2xl p-5">
+                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Conversion Drop</p>
+                    <div className="flex items-baseline gap-3">
+                      <p className="text-2xl font-bold text-white">{(leak.observed_rate * 100).toFixed(1)}%</p>
+                      <span className="text-sm font-semibold text-red-400">
+                        {((leak.observed_rate - leak.baseline_rate) * 100).toFixed(1)}pp
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">baseline: {(leak.baseline_rate * 100).toFixed(1)}%</p>
+                  </motion.div>
+                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}
+                    className="bg-slate-900/60 border border-slate-700/50 rounded-2xl p-5">
+                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Drop Magnitude</p>
+                    <p className="text-2xl font-bold text-amber-400">{(leak.magnitude * 100).toFixed(1)}%</p>
+                    <p className="text-xs text-slate-500 mt-1">below baseline</p>
+                  </motion.div>
+                </div>
+              </div>
+            </motion.section>
+          )}
+        </AnimatePresence>
+
+        {/* ================================================================
+            LIFT DIAGNOSIS
+        ================================================================ */}
+        <AnimatePresence>
+          {diagnosis && (
+            <motion.section initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mb-12">
+              <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-widest mb-4">LIFT Diagnosis</h2>
+              <div className="bg-slate-900/60 border border-slate-700/50 rounded-2xl p-6">
+                {/* LIFT Bars + Badges */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                  <div>
+                    <div className="flex gap-3 mb-4 flex-wrap">
+                      {diagnosis.hypotheses.map((h: any) => (
+                        <motion.div
+                          key={h.category}
+                          initial={{ scale: 0.8, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          className={`px-4 py-2 rounded-xl border text-sm font-semibold transition-all ${
+                            h.category === diagnosis.top_category
+                              ? "bg-cyan-500/15 border-cyan-400/50 text-cyan-300 shadow-[0_0_20px_rgba(6,182,212,0.2)]"
+                              : "bg-slate-800/60 border-slate-700/40 text-slate-500"
+                          }`}
+                        >
+                          <span className="mr-2">{LIFT_ICONS[h.category]}</span>
+                          {h.category}
+                        </motion.div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Primary Category</p>
+                    <p className="text-xl font-bold text-cyan-400">{LIFT_ICONS[diagnosis.top_category]} {diagnosis.top_category}</p>
+                  </div>
+                  <div>
+                    <ResponsiveContainer width="100%" height={160}>
+                      <BarChart data={liftChartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                        <XAxis dataKey="category" tick={{ fill: "#94a3b8", fontSize: 12 }} />
+                        <YAxis tick={{ fill: "#64748b", fontSize: 12 }} />
+                        <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid #334155", borderRadius: "12px", fontSize: "12px" }} />
+                        <Bar dataKey="score" radius={[6, 6, 0, 0]}>
+                          {liftChartData.map((entry: any, index: number) => (
+                            <Cell key={index} fill={entry.isTop ? "#06b6d4" : "#334155"} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Evidence */}
+                <div>
+                  <h3 className="text-xs text-slate-500 uppercase tracking-wider mb-3">Supporting Evidence</h3>
+                  <ul className="space-y-2">
+                    {diagnosis.hypotheses
+                      .filter((h: any) => h.signals.length > 0)
+                      .flatMap((h: any) =>
+                        h.signals.map((s: string, si: number) => (
+                          <motion.li
+                            key={`${h.category}-${si}`}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: si * 0.05 }}
+                            className="flex items-start gap-3 text-sm text-slate-400"
+                          >
+                            <span className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 ${
+                              h.category === diagnosis.top_category ? "bg-cyan-500" : "bg-slate-600"
+                            }`} />
+                            <span>
+                              <span className="text-slate-500 text-xs font-medium mr-2">[{h.category}]</span>
+                              {s}
+                            </span>
+                          </motion.li>
+                        ))
+                      )}
+                  </ul>
+                </div>
+              </div>
+            </motion.section>
+          )}
+        </AnimatePresence>
+
+        {/* ================================================================
+            REMEDIATION
+        ================================================================ */}
+        <AnimatePresence>
+          {remediation && (
+            <motion.section initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mb-12">
+              <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-widest mb-4">Remediation Plan</h2>
+              <div className="bg-slate-900/60 border border-slate-700/50 rounded-2xl p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <span className={`text-xs font-bold uppercase px-3 py-1 rounded-full border ${
+                    remediation.priority === "critical" ? "bg-red-500/20 text-red-400 border-red-500/30"
+                    : remediation.priority === "high" ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                    : "bg-blue-500/20 text-blue-400 border-blue-500/30"
+                  }`}>
+                    {remediation.priority} priority
+                  </span>
+                  <span className="text-xs text-slate-500">Category: {remediation.category}</span>
+                  <span className="text-xs text-slate-500">ETA: {remediation.estimated_time_to_fix}</span>
+                </div>
+
+                <ul className="space-y-3 mb-8">
+                  {remediation.actions.map((action: string, i: number) => (
+                    <motion.li key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.08 }}
+                      className="flex items-start gap-3">
+                      <span className="mt-0.5 w-5 h-5 rounded-md border bg-slate-800/60 border-slate-700/50 flex items-center justify-center shrink-0 text-xs text-slate-500">
+                        {i + 1}
+                      </span>
+                      <span className="text-sm text-slate-300">{action}</span>
+                    </motion.li>
+                  ))}
+                </ul>
+
+                {/* Impact Projection */}
+                {impact && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="bg-slate-800/40 rounded-xl p-4 border border-slate-700/30">
+                      <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">7-Day Revenue at Risk</p>
+                      <p className="text-xl font-bold text-red-400">${Math.round(impact.revenue_at_risk).toLocaleString()}</p>
+                    </div>
+                    <div className="bg-slate-800/40 rounded-xl p-4 border border-slate-700/30">
+                      <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Projected Recovery</p>
+                      <p className="text-xl font-bold text-green-400">
+                        ${Math.round(impact.projected_recovery_low).toLocaleString()} &ndash; ${Math.round(impact.projected_recovery_high).toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="bg-slate-800/40 rounded-xl p-4 border border-slate-700/30">
+                      <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Confidence</p>
+                      <p className="text-xl font-bold text-cyan-400">{Math.round(impact.confidence * 100)}%</p>
+                      <div className="mt-2 h-2 bg-slate-700/50 rounded-full overflow-hidden">
+                        <motion.div className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full"
+                          initial={{ width: "0%" }} animate={{ width: `${impact.confidence * 100}%` }}
+                          transition={{ duration: 1, ease: "easeOut" }} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.section>
+          )}
+        </AnimatePresence>
+
+        {/* ================================================================
+            AI NARRATIVE
+        ================================================================ */}
+        <AnimatePresence>
+          {aiNarrative && (
+            <motion.section initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mb-12">
+              <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-widest mb-4">
+                <span className="mr-2">&#x1F916;</span> AI Executive Summary
+              </h2>
+              <div className="bg-slate-900/60 border border-cyan-500/20 rounded-2xl p-6">
+                <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-line">{aiNarrative}</p>
+              </div>
+            </motion.section>
+          )}
+        </AnimatePresence>
+
+        {/* ================================================================
+            VERIFIED BANNER
+        ================================================================ */}
+        <AnimatePresence>
+          {verified && (
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+              className="mb-12 bg-green-500/10 border border-green-500/30 rounded-2xl p-6 text-center">
+              <p className="text-green-400 font-semibold text-lg">Pipeline Complete &mdash; Remediation Verified</p>
+              <p className="text-sm text-green-400/60 mt-1">Self-healing actions have been validated. Funnel recovery is in progress.</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ================================================================
+            FUNNEL TREND CHART (after results)
+        ================================================================ */}
+        <AnimatePresence>
+          {verified && (
+            <motion.section initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mb-12">
+              <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-widest mb-4">Funnel Trend - Paid Social Mobile</h2>
+              <div className="bg-slate-900/60 border border-slate-700/50 rounded-2xl p-6">
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={[
+                    { date: "Mar 28", cvr: 91.3, baseline: 91.0 },
+                    { date: "Mar 29", cvr: 91.4, baseline: 91.0 },
+                    { date: "Mar 30", cvr: 91.2, baseline: 91.0 },
+                    { date: "Mar 31", cvr: 91.4, baseline: 91.0 },
+                    { date: "Apr 01", cvr: 91.2, baseline: 91.0 },
+                    { date: "Apr 02", cvr: 91.1, baseline: 91.0 },
+                    { date: "Apr 03", cvr: 91.2, baseline: 91.0 },
+                    { date: "Apr 04", cvr: 91.0, baseline: 91.0 },
+                    { date: "Apr 05", cvr: 85.0, baseline: 91.0 },
+                    { date: "Apr 06", cvr: 80.9, baseline: 91.0 },
+                    { date: "Apr 07", cvr: 80.3, baseline: 91.0 },
+                    { date: "Apr 08", cvr: 77.5, baseline: 91.0 },
+                    { date: "Apr 09", cvr: 83.5, baseline: 91.0 },
+                    { date: "Apr 10", cvr: 91.4, baseline: 91.0 },
+                  ]}>
+                    <defs>
+                      <linearGradient id="cvrGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                    <XAxis dataKey="date" tick={{ fill: "#64748b", fontSize: 11 }} />
+                    <YAxis domain={[70, 95]} tick={{ fill: "#64748b", fontSize: 11 }} unit="%" />
+                    <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid #334155", borderRadius: "12px", fontSize: "12px" }} />
+                    <Area type="monotone" dataKey="baseline" stroke="#475569" strokeWidth={2} strokeDasharray="6 3" fill="none" name="Baseline" />
+                    <Area type="monotone" dataKey="cvr" stroke="#06b6d4" strokeWidth={2} fill="url(#cvrGradient)" name="Checkout-to-Paid CVR" />
+                  </AreaChart>
+                </ResponsiveContainer>
+                <div className="flex items-center gap-6 mt-3 justify-center text-xs text-slate-500">
+                  <span className="flex items-center gap-2"><span className="w-4 h-0.5 bg-cyan-500 inline-block" /> Observed CVR</span>
+                  <span className="flex items-center gap-2"><span className="w-4 h-0.5 bg-slate-500 inline-block border-dashed" style={{ borderTop: "2px dashed #64748b", height: 0 }} /> Baseline</span>
+                  <span className="flex items-center gap-2"><span className="w-3 h-3 bg-red-500/30 border border-red-500/50 inline-block rounded-sm" /> Incident Window</span>
+                </div>
+              </div>
+            </motion.section>
+          )}
+        </AnimatePresence>
+
+        {/* Footer */}
+        {!hasResults && !isRunning && (
+          <div className="text-center text-slate-600 text-sm mt-8">
+            Press <span className="text-slate-400 font-medium">Analyze Funnel</span> to run the self-healing pipeline
+          </div>
+        )}
+      </div>
     </div>
   );
 }
