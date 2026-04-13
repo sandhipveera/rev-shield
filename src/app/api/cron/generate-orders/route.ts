@@ -186,18 +186,60 @@ export async function GET(request: Request) {
     });
   }
 
-  const phase = targetDayIdx <= 7 ? "BASELINE" : targetDayIdx <= 11 ? "DEGRADED" : "RECOVERY";
+  // Batch mode: create as many orders as we can in ~50 seconds
+  // (Vercel function timeout is 60s on free tier)
+  const startTime = Date.now();
+  const MAX_RUNTIME = 50_000; // 50 seconds
+  const results: { date: string; phase: string; status: string; success: boolean }[] = [];
+  let currentDayIdx = targetDayIdx;
+  let currentDate = targetDate;
+  let orderCount = currentCount;
+  let orderTarget = targetCount;
 
-  // Create one order
-  const result = await createOrder(targetDate, targetDayIdx);
+  while (Date.now() - startTime < MAX_RUNTIME && currentDayIdx < PATTERNS.length) {
+    // Check if current day is in the future
+    if (currentDate > today) break;
+
+    // Check if current day is complete
+    if (orderCount >= orderTarget) {
+      currentDayIdx++;
+      if (currentDayIdx >= PATTERNS.length) break;
+      currentDate = addDays(START_DATE, currentDayIdx);
+      if (currentDate > today) break;
+      const cnt = await getOrderCountForDate(currentDate);
+      if (cnt < 0) break;
+      orderCount = cnt;
+      [orderTarget] = PATTERNS[currentDayIdx];
+      if (orderCount >= orderTarget) continue;
+    }
+
+    const phase = currentDayIdx <= 7 ? "BASELINE" : currentDayIdx <= 11 ? "DEGRADED" : "RECOVERY";
+    const result = await createOrder(currentDate, currentDayIdx);
+    results.push({ date: currentDate, phase, status: result.status, success: result.success });
+
+    if (result.success) {
+      orderCount++;
+    } else if (result.status === "rate_limited") {
+      // Wait 5 seconds and try again
+      await new Promise((r) => setTimeout(r, 5000));
+    } else {
+      // Other error, wait a bit
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+
+    // Delay between orders to respect rate limits
+    await new Promise((r) => setTimeout(r, 3000));
+  }
+
+  const succeeded = results.filter((r) => r.success).length;
+  const failed = results.filter((r) => !r.success).length;
 
   return NextResponse.json({
-    date: targetDate,
-    dayIndex: targetDayIdx,
-    phase,
-    ordersNow: currentCount + (result.success ? 1 : 0),
-    ordersTarget: targetCount,
-    result: result.status,
-    success: result.success,
+    message: `Batch complete: ${succeeded} created, ${failed} failed`,
+    totalAttempted: results.length,
+    succeeded,
+    failed,
+    results: results.slice(-10), // last 10 results
+    today,
   });
 }
