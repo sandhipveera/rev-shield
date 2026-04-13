@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RevShield - Product Demo</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #0a0a1a;
+    color: #fff;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px;
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+    pointer-events: none;
+  }
+
+  .slide.active {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: all;
+  }
+
+  .slide.exit {
+    opacity: 0;
+    transform: translateY(-40px);
+  }
+
+  /* Grid background */
+  .grid-bg {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.03;
+    background-image:
+      linear-gradient(rgba(6,182,212,0.3) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(6,182,212,0.3) 1px, transparent 1px);
+    background-size: 60px 60px;
+    z-index: 0;
+  }
+
+  /* Glow orbs */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.15;
+    z-index: 0;
+    animation: float 8s ease-in-out infinite;
+  }
+  .orb-1 { width: 400px; height: 400px; background: #06b6d4; top: -100px; right: -100px; }
+  .orb-2 { width: 300px; height: 300px; background: #8b5cf6; bottom: -50px; left: -50px; animation-delay: 3s; }
+  .orb-3 { width: 250px; height: 250px; background: #ef4444; top: 50%; left: 50%; animation-delay: 5s; }
+
+  @keyframes float {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(30px, -30px); }
+  }
+
+  /* Typography */
+  .title {
+    font-size: 72px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #06b6d4, #3b82f6, #8b5cf6);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1.1;
+    text-align: center;
+  }
+
+  .subtitle {
+    font-size: 24px;
+    color: #94a3b8;
+    margin-top: 16px;
+    font-weight: 300;
+    text-align: center;
+    letter-spacing: 0.05em;
+  }
+
+  .section-label {
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: #06b6d4;
+    margin-bottom: 20px;
+  }
+
+  .big-number {
+    font-size: 120px;
+    font-weight: 900;
+    line-height: 1;
+  }
+
+  .big-number.red { color: #ef4444; }
+  .big-number.cyan { color: #06b6d4; }
+  .big-number.green { color: #10b981; }
+  .big-number.amber { color: #f59e0b; }
+
+  .caption {
+    font-size: 20px;
+    color: #64748b;
+    margin-top: 12px;
+    text-align: center;
+    max-width: 700px;
+    line-height: 1.6;
+  }
+
+  .highlight {
+    color: #06b6d4;
+    font-weight: 600;
+  }
+
+  .highlight-red {
+    color: #ef4444;
+    font-weight: 600;
+  }
+
+  .highlight-green {
+    color: #10b981;
+    font-weight: 600;
+  }
+
+  /* Cards grid */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    max-width: 900px;
+    margin-top: 40px;
+  }
+
+  .card {
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(51, 65, 85, 0.5);
+    border-radius: 16px;
+    padding: 28px;
+    text-align: center;
+    backdrop-filter: blur(20px);
+    transition: transform 0.3s, border-color 0.3s;
+  }
+
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(6, 182, 212, 0.4);
+  }
+
+  .card-icon {
+    font-size: 36px;
+    margin-bottom: 12px;
+  }
+
+  .card-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #e2e8f0;
+    margin-bottom: 6px;
+  }
+
+  .card-desc {
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.5;
+  }
+
+  /* Pipeline visualization */
+  .pipeline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 40px 0;
+  }
+
+  .pipe-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 120px;
+    height: 100px;
+    border-radius: 16px;
+    border: 2px solid #1e293b;
+    background: rgba(15, 23, 42, 0.6);
+    transition: all 0.5s ease;
+  }
+
+  .pipe-step.lit {
+    border-color: rgba(6, 182, 212, 0.6);
+    background: rgba(6, 182, 212, 0.08);
+    box-shadow: 0 0 30px rgba(6, 182, 212, 0.2);
+  }
+
+  .pipe-step .icon { font-size: 28px; margin-bottom: 4px; }
+  .pipe-step .label { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; }
+  .pipe-step.lit .label { color: #67e8f9; }
+
+  .pipe-arrow {
+    color: #1e293b;
+    font-size: 20px;
+    transition: color 0.5s;
+  }
+  .pipe-arrow.lit { color: #06b6d4; }
+
+  /* Funnel bars */
+  .funnel-container { width: 100%; max-width: 700px; margin-top: 30px; }
+  .funnel-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .funnel-label {
+    width: 110px;
+    text-align: right;
+    font-size: 13px;
+    font-weight: 600;
+    color: #94a3b8;
+    padding-right: 16px;
+  }
+  .funnel-bar-wrap { flex: 1; height: 36px; background: #0f172a; border-radius: 8px; overflow: hidden; position: relative; }
+  .funnel-bar {
+    height: 100%;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.7);
+    transition: width 1.5s ease;
+    width: 0%;
+  }
+  .funnel-bar.cyan { background: linear-gradient(90deg, rgba(6,182,212,0.3), rgba(6,182,212,0.15)); border: 1px solid rgba(6,182,212,0.3); }
+  .funnel-bar.red { background: linear-gradient(90deg, rgba(239,68,68,0.3), rgba(239,68,68,0.15)); border: 1px solid rgba(239,68,68,0.4); }
+  .funnel-label.red { color: #ef4444; }
+
+  /* RRAF donut */
+  .donut-wrap { position: relative; width: 200px; height: 200px; margin: 20px 0; }
+  .donut-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .donut-bg { fill: none; stroke: rgba(51,65,85,0.5); stroke-width: 12; }
+  .donut-fill {
+    fill: none;
+    stroke: #ef4444;
+    stroke-width: 12;
+    stroke-linecap: round;
+    stroke-dasharray: 565.48;
+    stroke-dashoffset: 565.48;
+    transition: stroke-dashoffset 1.5s ease;
+  }
+  .donut-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .donut-text .score { font-size: 52px; font-weight: 900; color: #ef4444; }
+  .donut-text .unit { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.2em; }
+
+  /* LIFT bars */
+  .lift-bars { max-width: 500px; width: 100%; margin-top: 30px; }
+  .lift-row { display: flex; align-items: center; margin-bottom: 12px; }
+  .lift-label { width: 100px; font-size: 14px; font-weight: 600; color: #94a3b8; }
+  .lift-bar-wrap { flex: 1; height: 28px; background: #0f172a; border-radius: 6px; overflow: hidden; }
+  .lift-bar { height: 100%; border-radius: 6px; transition: width 1.2s ease; width: 0%; display: flex; align-items: center; padding-left: 10px; font-size: 12px; font-weight: 700; }
+
+  /* Stats row */
+  .stats-row {
+    display: flex;
+    gap: 32px;
+    margin-top: 40px;
+  }
+  .stat {
+    text-align: center;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid #1e293b;
+    border-radius: 16px;
+    padding: 24px 36px;
+  }
+  .stat-value { font-size: 36px; font-weight: 800; }
+  .stat-label { font-size: 12px; color: #64748b; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.1em; }
+
+  /* Impact cards */
+  .impact-row {
+    display: flex;
+    gap: 24px;
+    margin-top: 30px;
+  }
+  .impact-card {
+    flex: 1;
+    padding: 28px;
+    border-radius: 16px;
+    text-align: center;
+    border: 1px solid;
+  }
+  .impact-card.danger { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.3); }
+  .impact-card.warning { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.3); }
+  .impact-card.success { background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.3); }
+
+  /* Badge */
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+  }
+  .badge.critical { background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+  .badge.high { background: rgba(245,158,11,0.2); color: #fcd34d; border: 1px solid rgba(245,158,11,0.3); }
+
+  /* Progress bar */
+  .progress-wrap {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: #0f172a;
+    z-index: 100;
+  }
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #06b6d4, #3b82f6);
+    transition: width 0.5s ease;
+    width: 0%;
+  }
+
+  /* Slide counter */
+  .slide-counter {
+    position: fixed;
+    bottom: 20px;
+    right: 30px;
+    font-size: 13px;
+    color: #334155;
+    z-index: 100;
+    font-weight: 500;
+  }
+
+  /* Nav hint */
+  .nav-hint {
+    position: fixed;
+    bottom: 20px;
+    left: 30px;
+    font-size: 12px;
+    color: #1e293b;
+    z-index: 100;
+  }
+
+  /* Tag */
+  .tag {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+    margin: 3px;
+  }
+  .tag.cyan { background: rgba(6,182,212,0.15); color: #67e8f9; border: 1px solid rgba(6,182,212,0.3); }
+  .tag.purple { background: rgba(139,92,246,0.15); color: #c4b5fd; border: 1px solid rgba(139,92,246,0.3); }
+  .tag.amber { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.3); }
+
+  /* Two col */
+  .two-col {
+    display: flex;
+    gap: 60px;
+    align-items: center;
+    max-width: 1000px;
+  }
+  .two-col .col { flex: 1; }
+
+  /* Action list */
+  .actions { text-align: left; max-width: 650px; margin-top: 24px; }
+  .action-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 14px;
+    padding: 14px 18px;
+    background: rgba(15,23,42,0.6);
+    border: 1px solid #1e293b;
+    border-radius: 12px;
+  }
+  .action-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: rgba(6,182,212,0.15);
+    border: 1px solid rgba(6,182,212,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: #67e8f9;
+    flex-shrink: 0;
+  }
+  .action-text { font-size: 14px; color: #cbd5e1; line-height: 1.5; }
+
+  /* Data source pills */
+  .source-pills {
+    display: flex;
+    gap: 12px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(15,23,42,0.8);
+    border: 1px solid #1e293b;
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #94a3b8;
+  }
+  .pill .emoji { font-size: 20px; }
+
+  /* Animate elements within active slides */
+  .slide.active .animate-in {
+    animation: fadeInUp 0.6s ease forwards;
+  }
+  .animate-in { opacity: 0; }
+  .delay-1 { animation-delay: 0.2s !important; }
+  .delay-2 { animation-delay: 0.4s !important; }
+  .delay-3 { animation-delay: 0.6s !important; }
+  .delay-4 { animation-delay: 0.8s !important; }
+  .delay-5 { animation-delay: 1.0s !important; }
+  .delay-6 { animation-delay: 1.2s !important; }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<!-- Progress -->
+<div class="progress-wrap"><div class="progress-bar" id="progress"></div></div>
+<div class="slide-counter" id="counter">1 / 12</div>
+<div class="nav-hint">Space / Arrow keys to navigate</div>
+
+<!-- ===== SLIDE 1: Title ===== -->
+<div class="slide active" data-slide="0">
+  <div class="animate-in">
+    <div class="title">RevShield</div>
+  </div>
+  <div class="animate-in delay-1">
+    <div class="subtitle">Self-Healing Funnel AI</div>
+  </div>
+  <div class="animate-in delay-2" style="margin-top: 40px;">
+    <div class="source-pills">
+      <span class="tag cyan">Real-Time Detection</span>
+      <span class="tag purple">RRAF Scoring</span>
+      <span class="tag amber">LIFT Diagnosis</span>
+      <span class="tag cyan">Auto-Remediation</span>
+    </div>
+  </div>
+  <div class="animate-in delay-3">
+    <p class="caption" style="margin-top: 30px;">
+      AI-powered revenue leak detection that finds, scores, diagnoses, and heals<br>conversion funnel issues in real time.
+    </p>
+  </div>
+</div>
+
+<!-- ===== SLIDE 2: The Problem ===== -->
+<div class="slide" data-slide="1">
+  <div class="animate-in">
+    <div class="section-label">The Problem</div>
+  </div>
+  <div class="animate-in delay-1">
+    <div class="big-number red">$4,599</div>
+  </div>
+  <div class="animate-in delay-2">
+    <p class="caption">Revenue lost <span class="highlight-red">every single day</span> from a single undetected checkout funnel leak.</p>
+  </div>
+  <div class="animate-in delay-3">
+    <div class="stats-row">
+      <div class="stat">
+        <div class="stat-value" style="color: #ef4444;">14.8%</div>
+        <div class="stat-label">Conversion Drop</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" style="color: #f59e0b;">3,100ms</div>
+        <div class="stat-label">P95 Latency Spike</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" style="color: #ef4444;">4.2%</div>
+        <div class="stat-label">Error Rate</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" style="color: #8b5cf6;">75/day</div>
+        <div class="stat-label">Support Tickets</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SLIDE 3: 5-Stage Pipeline ===== -->
+<div class="slide" data-slide="2">
+  <div class="animate-in">
+    <div class="section-label">The Solution: 5-Stage AI Pipeline</div>
+  </div>
+  <div class="animate-in delay-1">
+    <div class="pipeline" id="pipeline">
+      <div class="pipe-step" id="ps-0">
+        <span class="icon">&#x1F50D;</span>
+        <span class="label">Detect</span>
+      </div>
+      <span class="pipe-arrow" id="pa-0">&#x25B6;</span>
+      <div class="pipe-step" id="ps-1">
+        <span class="icon">&#x1F4CA;</span>
+        <span class="label">Score</span>
+      </div>
+      <span class="pipe-arrow" id="pa-1">&#x25B6;</span>
+      <div class="pipe-step" id="ps-2">
+        <span class="icon">&#x1FA7A;</span>
+        <span class="label">Diagnose</span>
+      </div>
+      <span class="pipe-arrow" id="pa-2">&#x25B6;</span>
+      <div class="pipe-step" id="ps-3">
+        <span class="icon">&#x2728;</span>
+        <span class="label">Heal</span>
+      </div>
+      <span class="pipe-arrow" id="pa-3">&#x25B6;</span>
+      <div class="pipe-step" id="ps-4">
+        <span class="icon">&#x2705;</span>
+        <span class="label">Verify</span>
+      </div>
+    </div>
+  </div>
+  <div class="animate-in delay-2">
+    <p class="caption">Each stage runs in sequence via <span class="highlight">SSE streaming</span>, giving stakeholders real-time visibility into the healing process.</p>
+  </div>
+</div>
+
+<!-- ===== SLIDE 4: Data Sources ===== -->
+<div class="slide" data-slide="3">
+  <div class="animate-in">
+    <div class="section-label">Flexible Data Sources</div>
+  </div>
+  <div class="animate-in delay-1">
+    <p style="font-size: 32px; font-weight: 700; text-align: center;">Plug Into Your Stack</p>
+  </div>
+  <div class="animate-in delay-2">
+    <div class="source-pills" style="margin-top: 30px;">
+      <div class="pill"><span class="emoji">&#x1F3AF;</span> Demo Data</div>
+      <div class="pill"><span class="emoji">&#x1F4C4;</span> CSV Upload</div>
+      <div class="pill"><span class="emoji">&#x1F4CA;</span> Google Sheets</div>
+      <div class="pill"><span class="emoji">&#x1F6D2;</span> Shopify API</div>
+      <div class="pill"><span class="emoji">&#x1F4B3;</span> Stripe API</div>
+      <div class="pill"><span class="emoji">&#x1F9EA;</span> Scenario Generator</div>
+    </div>
+  </div>
+  <div class="animate-in delay-3">
+    <p class="caption" style="margin-top: 24px;">Connect real e-commerce data or simulate degradation scenarios. No vendor lock-in.</p>
+  </div>
+</div>
+
+<!-- ===== SLIDE 5: Funnel Leak Detection ===== -->
+<div class="slide" data-slide="4">
+  <div class="animate-in">
+    <div class="section-label">Stage 1: Detect</div>
+  </div>
+  <div class="animate-in delay-1">
+    <p style="font-size: 28px; font-weight: 700;">Funnel Leak Detection</p>
+    <p class="caption" style="margin-top: 8px;">Compares observed conversion rates against dynamic baselines per segment.</p>
+  </div>
+  <div class="funnel-container animate-in delay-2" id="funnel">
+    <div class="funnel-row">
+      <div class="funnel-label">Sessions</div>
+      <div class="funnel-bar-wrap"><div class="funnel-bar cyan" data-width="100">100%</div></div>
+    </div>
+    <div class="funnel-row">
+      <div class="funnel-label">View Item</div>
+      <div class="funnel-bar-wrap"><div class="funnel-bar cyan" data-width="72">72%</div></div>
+    </div>
+    <div class="funnel-row">
+      <div class="funnel-label">Add to Cart</div>
+      <div class="funnel-bar-wrap"><div class="funnel-bar cyan" data-width="15">15%</div></div>
+    </div>
+    <div class="funnel-row">
+      <div class="funnel-label">Checkout</div>
+      <div class="funnel-bar-wrap"><div class="funnel-bar cyan" data-width="8">8%</div></div>
+    </div>
+    <div class="funnel-row">
+      <div class="funnel-label red">Paid</div>
+      <div class="funnel-bar-wrap"><div class="funnel-bar red" data-width="7">7% <span style="margin-left:10px;color:#fca5a5;">&#x25BC; -16.5%</span></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SLIDE 6: RRAF Score ===== -->
+<div class="slide" data-slide="5">
+  <div class="animate-in">
+    <div class="section-label">Stage 2: Score (RRAF Framework)</div>
+  </div>
+  <div class="two-col">
+    <div class="col" style="text-align: center;">
+      <div class="animate-in delay-1">
+        <div class="donut-wrap" id="donut" style="margin: 0 auto;">
+          <svg viewBox="0 0 200 200">
+            <circle class="donut-bg" cx="100" cy="100" r="90"/>
+            <circle class="donut-fill" id="donut-fill" cx="100" cy="100" r="90"/>
+          </svg>
+          <div class="donut-text">
+            <span class="score">80</span>
+            <span class="unit">RRAF</span>
+          </div>
+        </div>
+      </div>
+      <div class="animate-in delay-2">
+        <div class="badge critical">HIGH RISK</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="animate-in delay-2">
+        <div style="margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 4px;"><span style="color: #ef4444;">&#x25CF; Risk</span><span style="color: #ef4444; font-weight: 700;">74%</span></div>
+          <div style="height: 8px; background: #0f172a; border-radius: 4px;"><div style="height: 100%; width: 74%; background: #ef4444; border-radius: 4px;"></div></div>
+          <div style="font-size: 10px; color: #475569; margin-top: 2px;">weight: 30%</div>
+        </div>
+        <div style="margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 4px;"><span style="color: #f59e0b;">&#x25CF; Root Cause</span><span style="color: #f59e0b; font-weight: 700;">100%</span></div>
+          <div style="height: 8px; background: #0f172a; border-radius: 4px;"><div style="height: 100%; width: 100%; background: #f59e0b; border-radius: 4px;"></div></div>
+          <div style="font-size: 10px; color: #475569; margin-top: 2px;">weight: 20%</div>
+        </div>
+        <div style="margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 4px;"><span style="color: #8b5cf6;">&#x25CF; Revenue</span><span style="color: #8b5cf6; font-weight: 700;">78%</span></div>
+          <div style="height: 8px; background: #0f172a; border-radius: 4px;"><div style="height: 100%; width: 78%; background: #8b5cf6; border-radius: 4px;"></div></div>
+          <div style="font-size: 10px; color: #475569; margin-top: 2px;">weight: 35%</div>
+        </div>
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 4px;"><span style="color: #06b6d4;">&#x25CF; Frequency</span><span style="color: #06b6d4; font-weight: 700;">71%</span></div>
+          <div style="height: 8px; background: #0f172a; border-radius: 4px;"><div style="height: 100%; width: 71%; background: #06b6d4; border-radius: 4px;"></div></div>
+          <div style="font-size: 10px; color: #475569; margin-top: 2px;">weight: 15%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SLIDE 7: LIFT Diagnosis ===== -->
+<div class="slide" data-slide="6">
+  <div class="animate-in">
+    <div class="section-label">Stage 3: Diagnose (LIFT Framework)</div>
+  </div>
+  <div class="animate-in delay-1">
+    <p style="font-size: 28px; font-weight: 700; text-align: center;">
+      Primary Cause: <span style="color: #ef4444;">&#x26A0;&#xFE0F; Friction</span>
+    </p>
+  </div>
+  <div class="lift-bars animate-in delay-2" id="lift-bars">
+    <div class="lift-row">
+      <div class="lift-label" style="color: #06b6d4;">&#x26A0;&#xFE0F; Friction</div>
+      <div class="lift-bar-wrap"><div class="lift-bar" data-width="85" style="background: rgba(6,182,212,0.3); color: #67e8f9;">731</div></div>
+    </div>
+    <div class="lift-row">
+      <div class="lift-label">&#x1F512; Trust</div>
+      <div class="lift-bar-wrap"><div class="lift-bar" data-width="58" style="background: rgba(51,65,85,0.5); color: #94a3b8;">496</div></div>
+    </div>
+    <div class="lift-row">
+      <div class="lift-label">&#x1F3AF; Incentive</div>
+      <div class="lift-bar-wrap"><div class="lift-bar" data-width="30" style="background: rgba(51,65,85,0.5); color: #94a3b8;">254</div></div>
+    </div>
+    <div class="lift-row">
+      <div class="lift-label">&#x1F6C2; Landing</div>
+      <div class="lift-bar-wrap"><div class="lift-bar" data-width="18" style="background: rgba(51,65,85,0.5); color: #94a3b8;">150</div></div>
+    </div>
+  </div>
+  <div class="animate-in delay-3">
+    <p class="caption" style="margin-top: 20px;">
+      Correlated <span class="highlight">3 signals</span>: Latency +1920ms, Error rate +3.1pp, 96 checkout tickets
+    </p>
+  </div>
+</div>
+
+<!-- ===== SLIDE 8: Remediation ===== -->
+<div class="slide" data-slide="7">
+  <div class="animate-in">
+    <div class="section-label">Stage 4: Heal (Auto-Remediation)</div>
+  </div>
+  <div class="animate-in delay-1" style="text-align: center;">
+    <div class="badge critical">CRITICAL PRIORITY</div>
+    <p style="font-size: 14px; color: #64748b; margin-top: 8px;">Category: Friction &middot; ETA: 1-2 days</p>
+  </div>
+  <div class="actions animate-in delay-2">
+    <div class="action-item">
+      <div class="action-num">1</div>
+      <div class="action-text">Investigate checkout API latency spike &mdash; check downstream service health</div>
+    </div>
+    <div class="action-item">
+      <div class="action-num">2</div>
+      <div class="action-text">Review error logs for the checkout flow (payment, inventory, address validation)</div>
+    </div>
+    <div class="action-item">
+      <div class="action-num">3</div>
+      <div class="action-text">Roll back recent checkout flow changes if correlated with degradation onset</div>
+    </div>
+    <div class="action-item">
+      <div class="action-num">4</div>
+      <div class="action-text">Enable client-side performance monitoring for the affected device type</div>
+    </div>
+    <div class="action-item">
+      <div class="action-num">5</div>
+      <div class="action-text">Consider enabling a simplified checkout fallback for high-latency sessions</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SLIDE 9: Impact Projection ===== -->
+<div class="slide" data-slide="8">
+  <div class="animate-in">
+    <div class="section-label">Stage 5: Verify & Project</div>
+  </div>
+  <div class="animate-in delay-1">
+    <div class="impact-row">
+      <div class="impact-card danger">
+        <p style="font-size: 12px; color: #fca5a5; margin-bottom: 8px;">7-Day Revenue at Risk</p>
+        <p style="font-size: 40px; font-weight: 900; color: #ef4444;">$32,190</p>
+        <p style="font-size: 11px; color: #64748b; margin-top: 4px;">if no action taken</p>
+      </div>
+      <div class="impact-card warning">
+        <p style="font-size: 12px; color: #fcd34d; margin-bottom: 8px;">Projected Recovery</p>
+        <p style="font-size: 40px; font-weight: 900; color: #f59e0b;">$16k&ndash;$29k</p>
+        <p style="font-size: 11px; color: #64748b; margin-top: 4px;">50%-90% recovery range</p>
+      </div>
+      <div class="impact-card success">
+        <p style="font-size: 12px; color: #6ee7b7; margin-bottom: 8px;">Confidence</p>
+        <p style="font-size: 40px; font-weight: 900; color: #10b981;">85%</p>
+        <p style="font-size: 11px; color: #64748b; margin-top: 4px;">based on signal strength</p>
+      </div>
+    </div>
+  </div>
+  <div class="animate-in delay-2">
+    <p class="caption" style="margin-top: 24px;">AI projects 3 scenarios and provides <span class="highlight-green">actionable recovery estimates</span> stakeholders can act on immediately.</p>
+  </div>
+</div>
+
+<!-- ===== SLIDE 10: Before / After ===== -->
+<div class="slide" data-slide="9">
+  <div class="animate-in">
+    <div class="section-label">Before / During / After</div>
+  </div>
+  <div class="animate-in delay-1">
+    <table style="border-collapse: collapse; max-width: 800px; width: 100%; text-align: center;">
+      <thead>
+        <tr style="border-bottom: 1px solid #1e293b;">
+          <th style="padding: 12px 16px; text-align: left; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em;">Metric</th>
+          <th style="padding: 12px 16px; font-size: 12px; color: #10b981; text-transform: uppercase; letter-spacing: 0.1em;">Baseline</th>
+          <th style="padding: 12px 16px; font-size: 12px; color: #ef4444; text-transform: uppercase; letter-spacing: 0.1em;">Incident</th>
+          <th style="padding: 12px 16px; font-size: 12px; color: #06b6d4; text-transform: uppercase; letter-spacing: 0.1em;">Post-Fix</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom: 1px solid #0f172a;">
+          <td style="padding: 14px 16px; text-align: left; color: #94a3b8; font-weight: 500;">Checkout CVR</td>
+          <td style="padding: 14px 16px; color: #10b981; font-weight: 700;">91.0%</td>
+          <td style="padding: 14px 16px; color: #ef4444; font-weight: 700;">77.5%</td>
+          <td style="padding: 14px 16px; color: #06b6d4; font-weight: 700;">91.4% &#x2713;</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #0f172a;">
+          <td style="padding: 14px 16px; text-align: left; color: #94a3b8; font-weight: 500;">Latency (P95)</td>
+          <td style="padding: 14px 16px; color: #10b981; font-weight: 700;">1,200ms</td>
+          <td style="padding: 14px 16px; color: #ef4444; font-weight: 700;">3,100ms</td>
+          <td style="padding: 14px 16px; color: #06b6d4; font-weight: 700;">1,230ms &#x2713;</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #0f172a;">
+          <td style="padding: 14px 16px; text-align: left; color: #94a3b8; font-weight: 500;">Error Rate</td>
+          <td style="padding: 14px 16px; color: #10b981; font-weight: 700;">1.2%</td>
+          <td style="padding: 14px 16px; color: #ef4444; font-weight: 700;">4.2%</td>
+          <td style="padding: 14px 16px; color: #06b6d4; font-weight: 700;">1.3% &#x2713;</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #0f172a;">
+          <td style="padding: 14px 16px; text-align: left; color: #94a3b8; font-weight: 500;">Daily Revenue</td>
+          <td style="padding: 14px 16px; color: #10b981; font-weight: 700;">$33,768</td>
+          <td style="padding: 14px 16px; color: #ef4444; font-weight: 700;">$26,386</td>
+          <td style="padding: 14px 16px; color: #06b6d4; font-weight: 700;">$33,768 &#x2713;</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ===== SLIDE 11: Interactive Drill-Downs ===== -->
+<div class="slide" data-slide="10">
+  <div class="animate-in">
+    <div class="section-label">Interactive Drill-Downs</div>
+  </div>
+  <div class="animate-in delay-1">
+    <p style="font-size: 28px; font-weight: 700; text-align: center;">Click Anything for Details</p>
+  </div>
+  <div class="animate-in delay-2">
+    <div class="cards" style="grid-template-columns: repeat(4, 1fr); max-width: 1000px;">
+      <div class="card">
+        <div class="card-icon">&#x1F4CA;</div>
+        <div class="card-title">RRAF Score</div>
+        <div class="card-desc">Radar chart + component breakdown with formula</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#x1FA7A;</div>
+        <div class="card-title">LIFT Diagnosis</div>
+        <div class="card-desc">Pie chart with hypothesis cards & evidence signals</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#x1F4C9;</div>
+        <div class="card-title">Leak Analysis</div>
+        <div class="card-desc">Conversion comparison bars & all-leaks table</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#x1F4C8;</div>
+        <div class="card-title">Impact Projection</div>
+        <div class="card-desc">3-scenario area chart with confidence interval</div>
+      </div>
+    </div>
+  </div>
+  <div class="animate-in delay-3">
+    <div class="cards" style="grid-template-columns: repeat(3, 1fr); max-width: 750px; margin-top: 16px;">
+      <div class="card">
+        <div class="card-icon">&#x1F527;</div>
+        <div class="card-title">Remediation</div>
+        <div class="card-desc">Step-by-step action plan with priority</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#x1F4CA;</div>
+        <div class="card-title">Funnel Stages</div>
+        <div class="card-desc">Observed vs baseline visual comparison</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#x1F4CB;</div>
+        <div class="card-title">Incident History</div>
+        <div class="card-desc">Full timeline with status & severity</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SLIDE 12: CTA ===== -->
+<div class="slide" data-slide="11">
+  <div class="animate-in">
+    <div class="title" style="font-size: 56px;">Stop Losing Revenue.</div>
+  </div>
+  <div class="animate-in delay-1">
+    <div class="title" style="font-size: 56px;">Start Self-Healing.</div>
+  </div>
+  <div class="animate-in delay-2">
+    <div style="margin-top: 40px; display: flex; gap: 20px; align-items: center; justify-content: center;">
+      <a href="https://rev-shield.vercel.app" target="_blank"
+         style="display: inline-block; background: #06b6d4; color: white; font-weight: 700; font-size: 18px; padding: 16px 40px; border-radius: 16px; text-decoration: none; box-shadow: 0 0 40px rgba(6,182,212,0.4);">
+        Try Live Demo &#x2192;
+      </a>
+      <a href="https://github.com/sandhipveera/rev-shield" target="_blank"
+         style="display: inline-block; background: transparent; color: #94a3b8; font-weight: 600; font-size: 16px; padding: 14px 32px; border-radius: 16px; text-decoration: none; border: 1px solid #334155;">
+        GitHub Repo
+      </a>
+    </div>
+  </div>
+  <div class="animate-in delay-3">
+    <p class="caption" style="margin-top: 30px;">
+      Built with Next.js 16 &middot; TypeScript &middot; Recharts &middot; Framer Motion &middot; SSE Streaming
+    </p>
+  </div>
+</div>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+let current = 0;
+
+function goTo(idx) {
+  if (idx < 0 || idx >= total) return;
+  slides[current].classList.remove('active');
+  slides[current].classList.add('exit');
+  setTimeout(() => slides[current === idx ? current : current].classList.remove('exit'), 800);
+
+  const prev = current;
+  current = idx;
+  slides[current].classList.add('active');
+
+  // Remove exit from previous after transition
+  setTimeout(() => slides[prev].classList.remove('exit'), 800);
+
+  document.getElementById('progress').style.width = ((current + 1) / total * 100) + '%';
+  document.getElementById('counter').textContent = (current + 1) + ' / ' + total;
+
+  // Trigger animations for specific slides
+  triggerSlideAnimations(current);
+}
+
+function next() { goTo(current + 1); }
+function prev() { goTo(current - 1); }
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') { e.preventDefault(); next(); }
+  if (e.key === 'ArrowLeft' || e.key === 'Backspace') { e.preventDefault(); prev(); }
+});
+
+// Touch support
+let touchStartX = 0;
+document.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
+document.addEventListener('touchend', (e) => {
+  const diff = touchStartX - e.changedTouches[0].clientX;
+  if (Math.abs(diff) > 50) { diff > 0 ? next() : prev(); }
+});
+
+// Click to advance
+document.addEventListener('click', (e) => {
+  if (e.target.closest('a')) return;
+  if (e.clientX > window.innerWidth * 0.5) next();
+  else prev();
+});
+
+function triggerSlideAnimations(idx) {
+  // Pipeline animation (slide 2)
+  if (idx === 2) {
+    for (let i = 0; i <= 4; i++) {
+      setTimeout(() => {
+        document.getElementById('ps-' + i)?.classList.add('lit');
+        if (i > 0) document.getElementById('pa-' + (i - 1))?.classList.add('lit');
+      }, i * 400);
+    }
+  }
+
+  // Funnel bars (slide 4)
+  if (idx === 4) {
+    setTimeout(() => {
+      document.querySelectorAll('#funnel .funnel-bar').forEach(bar => {
+        bar.style.width = bar.dataset.width + '%';
+      });
+    }, 300);
+  }
+
+  // RRAF donut (slide 5)
+  if (idx === 5) {
+    setTimeout(() => {
+      const circ = 2 * Math.PI * 90;
+      document.getElementById('donut-fill').style.strokeDashoffset = circ * (1 - 0.80);
+    }, 300);
+  }
+
+  // LIFT bars (slide 6)
+  if (idx === 6) {
+    setTimeout(() => {
+      document.querySelectorAll('#lift-bars .lift-bar').forEach(bar => {
+        bar.style.width = bar.dataset.width + '%';
+      });
+    }, 300);
+  }
+}
+
+// Auto-play mode (optional - press 'a' to toggle)
+let autoPlay = null;
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'a') {
+    if (autoPlay) {
+      clearInterval(autoPlay);
+      autoPlay = null;
+    } else {
+      autoPlay = setInterval(next, 4000);
+    }
+  }
+});
+
+// Init
+document.getElementById('progress').style.width = (1 / total * 100) + '%';
+</script>
+</body>
+</html>
