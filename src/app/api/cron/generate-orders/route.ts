@@ -1,11 +1,15 @@
-// Vercel Cron Job: Generates backdated Shopify orders for Nova Pulse store
-// Schedule: Every 5 minutes (configured in vercel.json)
-// Creates 1 order per invocation to respect Shopify rate limits
+// Vercel Cron Job: Generates Shopify orders for Nova Pulse store
+// Schedule: daily (Vercel free tier) + local cron calls every 5 min
 //
-// Timeline (Apr 5 - Apr 18, 2026):
-// Days 0-7  (Apr 5-12):  BASELINE — normal traffic, ~92% success
-// Days 8-11 (Apr 13-16): DEGRADATION — payment failures spike
-// Days 12-13 (Apr 17-18): RECOVERY — metrics returning to normal
+// NOTE: Shopify dev stores ignore `created_at` — all orders get today's timestamp.
+// So we generate orders for TODAY only, with the pattern determined by what day it is.
+//
+// New Timeline (Apr 13 - Apr 18, 2026):
+// Apr 13-14: BASELINE — already have ~700+ orders with ~92% success
+// Apr 15:    BASELINE — normal traffic, ~92% success
+// Apr 16:    DEGRADATION — payment failures begin, ~75% success
+// Apr 17:    DEGRADATION — worst day, ~58% success
+// Apr 18:    RECOVERY — hackathon day, ~88% success (demo the recovery!)
 
 import { NextResponse } from "next/server";
 
@@ -14,15 +18,15 @@ const TOKEN = process.env.SHOPIFY_ADMIN_TOKEN || "";
 const API = `https://${SHOP}/admin/api/2024-01`;
 const CRON_SECRET = process.env.CRON_SECRET || "";
 
-const START_DATE = "2026-04-05";
 const END_DATE = "2026-04-18";
 
-// Day patterns: [targetOrders, successRate]
-const PATTERNS: [number, number][] = [
-  [12, 92], [11, 93], [13, 91], [12, 92], [13, 93], [11, 92], [12, 91], [12, 92], // baseline
-  [9, 80], [6, 68], [5, 60], [5, 58],  // degradation
-  [9, 84], [12, 91],  // recovery
-];
+// Daily config: date -> [targetOrders, successRate]
+const DAILY_PLAN: Record<string, [number, number]> = {
+  "2026-04-15": [40, 92],   // baseline day
+  "2026-04-16": [30, 72],   // degradation starts
+  "2026-04-17": [20, 58],   // worst day
+  "2026-04-18": [35, 88],   // recovery (hackathon day!)
+};
 
 const PRODUCTS = [
   ["Wireless Charging Pad", "39.00"], ["MagSafe Phone Grip", "24.00"], ["USB-C Travel Hub", "59.00"],
@@ -43,21 +47,10 @@ const FAILURE_NOTES = ["Payment gateway timeout","Card processor error","3DS cha
 const rand = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 const randInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
 
-// Persistent state via Shopify order count per date
-// We use a simple approach: check how many orders exist for each date and fill gaps
-
-function addDays(dateStr: string, days: number): string {
-  const d = new Date(dateStr + "T00:00:00Z");
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-}
-
-function daysBetween(d1: string, d2: string): number {
-  return Math.round((new Date(d2).getTime() - new Date(d1).getTime()) / 86400000);
-}
-
 async function getOrderCountForDate(date: string): Promise<number> {
-  const nextDay = addDays(date, 1);
+  const d = new Date(date + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + 1);
+  const nextDay = d.toISOString().slice(0, 10);
   const res = await fetch(
     `${API}/orders/count.json?status=any&created_at_min=${date}T00:00:00Z&created_at_max=${nextDay}T00:00:00Z`,
     { headers: { "X-Shopify-Access-Token": TOKEN } }
@@ -67,10 +60,7 @@ async function getOrderCountForDate(date: string): Promise<number> {
   return data.count || 0;
 }
 
-async function createOrder(date: string, dayIdx: number): Promise<{ success: boolean; status: string }> {
-  const [, successRate] = PATTERNS[dayIdx];
-  const isDegraded = dayIdx >= 8 && dayIdx <= 11;
-
+async function createOrder(successRate: number, isDegraded: boolean): Promise<{ success: boolean; status: string }> {
   const channel = isDegraded ? rand(DEGRADED_CHANNELS) : rand(CHANNELS);
   const isPaid = Math.random() * 100 < successRate;
   const [prodName, prodPrice] = rand(PRODUCTS);
@@ -87,18 +77,13 @@ async function createOrder(date: string, dayIdx: number): Promise<{ success: boo
     lineItems.push({ title: p2Name, price: p2Price, quantity: 1 });
   }
 
-  const hour = randInt(8, 22);
-  const minute = randInt(0, 59);
-  const second = randInt(0, 59);
-  const createdAt = `${date}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:${String(second).padStart(2, "0")}+00:00`;
-
   const note = isDegraded && !isPaid ? rand(FAILURE_NOTES) : "";
 
+  // Don't set created_at — Shopify dev stores ignore it anyway
   const order = {
     email,
     financial_status: isPaid ? "paid" : "voided",
     fulfillment_status: isPaid && Math.random() > 0.3 ? "fulfilled" : null,
-    created_at: createdAt,
     line_items: lineItems,
     source_name: "revshield_gen",
     tags: channel,
@@ -123,7 +108,7 @@ async function createOrder(date: string, dayIdx: number): Promise<{ success: boo
   });
 
   if (res.ok) {
-    return { success: true, status: `${isPaid ? "paid" : "voided"} | ${channel} | ${createdAt}` };
+    return { success: true, status: `${isPaid ? "paid" : "voided"} | ${channel}` };
   }
 
   if (res.status === 429) {
@@ -138,7 +123,6 @@ export async function GET(request: Request) {
   // Verify cron secret (optional security)
   const authHeader = request.headers.get("authorization");
   if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
-    // Allow without secret for dev, but log warning
     console.warn("Cron called without valid secret");
   }
 
@@ -153,81 +137,57 @@ export async function GET(request: Request) {
     return NextResponse.json({ message: "Past end date. Cron complete.", done: true });
   }
 
-  // Find the first day that needs more orders
-  let targetDayIdx = -1;
-  let targetDate = "";
-  let currentCount = 0;
-  let targetCount = 0;
-
-  for (let i = 0; i < PATTERNS.length; i++) {
-    const date = addDays(START_DATE, i);
-
-    // Don't create orders for future dates
-    if (date > today) break;
-
-    const count = await getOrderCountForDate(date);
-    if (count < 0) continue; // API error, skip
-
-    const [target] = PATTERNS[i];
-    if (count < target) {
-      targetDayIdx = i;
-      targetDate = date;
-      currentCount = count;
-      targetCount = target;
-      break;
-    }
-  }
-
-  if (targetDayIdx === -1) {
+  // Get today's plan
+  const plan = DAILY_PLAN[today];
+  if (!plan) {
     return NextResponse.json({
-      message: "All dates up to today are fully populated!",
+      message: `No plan for ${today}. Orders only generated for: ${Object.keys(DAILY_PLAN).join(", ")}`,
       today,
-      done: today >= END_DATE,
     });
   }
 
-  // Batch mode: create as many orders as we can in ~50 seconds
-  // (Vercel function timeout is 60s on free tier)
+  const [targetOrders, successRate] = plan;
+  const isDegraded = successRate < 80;
+
+  // Check how many orders we already have today
+  const currentCount = await getOrderCountForDate(today);
+  if (currentCount < 0) {
+    return NextResponse.json({ error: "Failed to check order count" }, { status: 500 });
+  }
+
+  if (currentCount >= targetOrders) {
+    return NextResponse.json({
+      message: `Today (${today}) is fully populated: ${currentCount}/${targetOrders} orders`,
+      today,
+      currentCount,
+      targetOrders,
+      successRate,
+    });
+  }
+
+  const remaining = targetOrders - currentCount;
+
+  // Batch mode: create orders within 50s runtime limit
   const startTime = Date.now();
-  const MAX_RUNTIME = 50_000; // 50 seconds
-  const results: { date: string; phase: string; status: string; success: boolean }[] = [];
-  let currentDayIdx = targetDayIdx;
-  let currentDate = targetDate;
-  let orderCount = currentCount;
-  let orderTarget = targetCount;
+  const MAX_RUNTIME = 50_000;
+  const results: { phase: string; status: string; success: boolean }[] = [];
+  let created = 0;
 
-  while (Date.now() - startTime < MAX_RUNTIME && currentDayIdx < PATTERNS.length) {
-    // Check if current day is in the future
-    if (currentDate > today) break;
+  const phase = isDegraded ? "DEGRADED" : successRate < 90 ? "RECOVERY" : "BASELINE";
 
-    // Check if current day is complete
-    if (orderCount >= orderTarget) {
-      currentDayIdx++;
-      if (currentDayIdx >= PATTERNS.length) break;
-      currentDate = addDays(START_DATE, currentDayIdx);
-      if (currentDate > today) break;
-      const cnt = await getOrderCountForDate(currentDate);
-      if (cnt < 0) break;
-      orderCount = cnt;
-      [orderTarget] = PATTERNS[currentDayIdx];
-      if (orderCount >= orderTarget) continue;
-    }
-
-    const phase = currentDayIdx <= 7 ? "BASELINE" : currentDayIdx <= 11 ? "DEGRADED" : "RECOVERY";
-    const result = await createOrder(currentDate, currentDayIdx);
-    results.push({ date: currentDate, phase, status: result.status, success: result.success });
+  while (Date.now() - startTime < MAX_RUNTIME && created < remaining) {
+    const result = await createOrder(successRate, isDegraded);
+    results.push({ phase, status: result.status, success: result.success });
 
     if (result.success) {
-      orderCount++;
+      created++;
     } else if (result.status === "rate_limited") {
-      // Wait 5 seconds and try again
       await new Promise((r) => setTimeout(r, 5000));
     } else {
-      // Other error, wait a bit
       await new Promise((r) => setTimeout(r, 2000));
     }
 
-    // Delay between orders to respect rate limits
+    // Delay between orders
     await new Promise((r) => setTimeout(r, 3000));
   }
 
@@ -235,11 +195,14 @@ export async function GET(request: Request) {
   const failed = results.filter((r) => !r.success).length;
 
   return NextResponse.json({
-    message: `Batch complete: ${succeeded} created, ${failed} failed`,
+    message: `Batch complete: ${succeeded} created, ${failed} failed. Progress: ${currentCount + succeeded}/${targetOrders}`,
+    today,
+    phase,
+    successRate,
+    progress: `${currentCount + succeeded}/${targetOrders}`,
     totalAttempted: results.length,
     succeeded,
     failed,
-    results: results.slice(-10), // last 10 results
-    today,
+    results: results.slice(-10),
   });
 }
