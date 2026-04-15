@@ -1,35 +1,71 @@
 "use client";
 
-import { useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { useState, useEffect } from "react";
 
-function AuthForm() {
+const COOKIE_NAME = "revshield_auth";
+
+export default function AuthGate({ children }: { children: React.ReactNode }) {
+  const [authed, setAuthed] = useState<boolean | null>(null);
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
-  const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/";
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
+    // Check if auth cookie exists
+    const hasAuth = document.cookie.split(";").some((c) => c.trim().startsWith(COOKIE_NAME + "="));
+    if (hasAuth) {
+      setAuthed(true);
+    } else {
+      // Check for ?pw= query param
+      const params = new URLSearchParams(window.location.search);
+      const pw = params.get("pw");
+      if (pw) {
+        handleLogin(pw);
+      } else {
+        setAuthed(false);
+      }
+    }
+  }, []);
+
+  async function handleLogin(pw: string) {
     setLoading(true);
     setError(false);
-
     const res = await fetch("/api/auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ password: pw }),
     });
-
     if (res.ok) {
-      window.location.href = redirect;
+      setAuthed(true);
+      // Remove ?pw= from URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete("pw");
+      window.history.replaceState({}, "", url.pathname);
     } else {
       setError(true);
-      setLoading(false);
+      setAuthed(false);
     }
+    setLoading(false);
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleLogin(password);
   };
 
+  // Still checking
+  if (authed === null) {
+    return (
+      <div className="min-h-screen bg-[#0a0a1a] flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Authenticated
+  if (authed) return <>{children}</>;
+
+  // Login form
   return (
     <div className="min-h-screen bg-[#0a0a1a] flex items-center justify-center p-4">
       <div className="fixed inset-0 pointer-events-none opacity-[0.03]" style={{
@@ -67,24 +103,12 @@ function AuthForm() {
           <button
             type="submit"
             disabled={loading || !password}
-            className="w-full mt-4 bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-700 disabled:text-slate-500 text-white font-semibold py-3 rounded-xl transition-all text-sm"
+            className="w-full mt-4 bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-700 disabled:text-slate-500 text-white font-semibold py-3 rounded-xl transition-all text-sm cursor-pointer"
           >
             {loading ? "Verifying..." : "Enter"}
           </button>
         </form>
       </div>
     </div>
-  );
-}
-
-export default function AuthPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#0a0a1a] flex items-center justify-center">
-        <p className="text-slate-500">Loading...</p>
-      </div>
-    }>
-      <AuthForm />
-    </Suspense>
   );
 }
