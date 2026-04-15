@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RevShield - Demo Guide &amp; Walkthrough</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  :root {
+    --cyan: #06b6d4;
+    --blue: #3b82f6;
+    --red: #ef4444;
+    --amber: #f59e0b;
+    --green: #22c55e;
+    --dark: #0a0a1a;
+    --slate: #1e293b;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  @media print {
+    body { background: white !important; color: #111 !important; }
+    .page { break-after: page; box-shadow: none !important; border: none !important; }
+    .no-print { display: none !important; }
+    .page { padding: 40px !important; }
+    h1, h2, h3 { color: #111 !important; }
+    .metric-card { border: 1px solid #ddd !important; background: #f9f9f9 !important; }
+    .step-card { border: 1px solid #ddd !important; background: #f9f9f9 !important; }
+    .callout { border: 1px solid #ddd !important; }
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #f1f5f9;
+    color: #1e293b;
+    line-height: 1.6;
+  }
+
+  .no-print {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: var(--dark); color: white; padding: 12px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 13px;
+  }
+  .no-print button {
+    background: var(--cyan); color: white; border: none; padding: 8px 20px;
+    border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px;
+  }
+
+  .page {
+    max-width: 800px; margin: 60px auto 30px; background: white;
+    padding: 50px 60px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border-radius: 4px;
+  }
+  .page:first-of-type { margin-top: 80px; }
+
+  /* Cover page */
+  .cover {
+    text-align: center; padding: 80px 60px;
+    background: linear-gradient(135deg, #0a0a1a 0%, #0f172a 100%);
+    color: white;
+  }
+  .cover h1 {
+    font-size: 48px; font-weight: 800;
+    background: linear-gradient(135deg, var(--cyan), var(--blue));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+  .cover .subtitle { font-size: 18px; color: #94a3b8; margin-bottom: 40px; }
+  .cover .meta { font-size: 13px; color: #64748b; line-height: 2; }
+  .cover .meta strong { color: #94a3b8; }
+
+  h1 { font-size: 28px; font-weight: 800; color: var(--dark); margin-bottom: 6px; }
+  h2 { font-size: 20px; font-weight: 700; color: var(--dark); margin: 30px 0 12px; }
+  h3 { font-size: 15px; font-weight: 600; color: #475569; margin: 20px 0 8px; }
+  p { margin-bottom: 12px; font-size: 14px; color: #475569; }
+  .section-tag {
+    display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1.5px; color: var(--cyan); margin-bottom: 8px;
+  }
+
+  .metric-row { display: flex; gap: 12px; margin: 16px 0; flex-wrap: wrap; }
+  .metric-card {
+    flex: 1; min-width: 140px; background: #f8fafc; border: 1px solid #e2e8f0;
+    border-radius: 10px; padding: 16px; text-align: center;
+  }
+  .metric-card .label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; }
+  .metric-card .value { font-size: 24px; font-weight: 800; margin: 4px 0; }
+  .metric-card .value.red { color: var(--red); }
+  .metric-card .value.green { color: var(--green); }
+  .metric-card .value.cyan { color: var(--cyan); }
+  .metric-card .value.amber { color: var(--amber); }
+  .metric-card .sub { font-size: 11px; color: #94a3b8; }
+
+  .step-list { counter-reset: step; margin: 16px 0; }
+  .step-card {
+    display: flex; gap: 16px; align-items: flex-start; padding: 14px 16px;
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
+    margin-bottom: 10px; counter-increment: step;
+  }
+  .step-num {
+    width: 28px; height: 28px; background: var(--cyan); color: white;
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; flex-shrink: 0;
+  }
+  .step-content { flex: 1; }
+  .step-content strong { font-size: 14px; color: #1e293b; }
+  .step-content p { font-size: 13px; margin: 4px 0 0; color: #64748b; }
+
+  .callout {
+    padding: 16px 20px; border-radius: 10px; margin: 16px 0; font-size: 13px;
+  }
+  .callout.info { background: #eff6ff; border-left: 4px solid var(--blue); color: #1e40af; }
+  .callout.warn { background: #fefce8; border-left: 4px solid var(--amber); color: #92400e; }
+  .callout.success { background: #f0fdf4; border-left: 4px solid var(--green); color: #166534; }
+  .callout.tip { background: #f0fdfa; border-left: 4px solid var(--cyan); color: #0e7490; }
+
+  .script-block {
+    background: #0f172a; color: #e2e8f0; padding: 20px 24px; border-radius: 10px;
+    margin: 12px 0; font-size: 13px; line-height: 1.8;
+  }
+  .script-block .timestamp {
+    display: inline-block; font-size: 11px; font-weight: 600; color: var(--cyan);
+    background: rgba(6,182,212,0.15); padding: 2px 8px; border-radius: 4px;
+    margin-right: 8px; font-family: monospace;
+  }
+  .script-block .action {
+    font-style: italic; color: #94a3b8; display: block; margin: 8px 0 4px;
+    padding-left: 16px; border-left: 2px solid #334155;
+  }
+
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+  th { background: #f1f5f9; padding: 10px 12px; text-align: left; font-weight: 600; border-bottom: 2px solid #e2e8f0; }
+  td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; }
+
+  .toc a { color: var(--cyan); text-decoration: none; }
+  .toc li { margin: 6px 0; font-size: 14px; }
+
+  .badge {
+    display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 10px;
+    border-radius: 20px; margin-right: 6px;
+  }
+  .badge.high { background: #fef2f2; color: var(--red); }
+  .badge.medium { background: #fffbeb; color: var(--amber); }
+  .badge.low { background: #f0fdf4; color: var(--green); }
+  .badge.prize { background: #fffbeb; color: #d97706; border: 1px solid #fbbf24; }
+
+  .two-col { display: flex; gap: 24px; }
+  .two-col > div { flex: 1; }
+
+  .pipeline-flow {
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+    margin: 20px 0; flex-wrap: wrap;
+  }
+  .pipeline-step {
+    background: #f0fdfa; border: 2px solid #99f6e4; border-radius: 12px;
+    padding: 10px 16px; text-align: center; font-size: 13px; font-weight: 600; color: #0d9488;
+  }
+  .pipeline-arrow { color: #94a3b8; font-size: 18px; }
+</style>
+</head>
+<body>
+
+<!-- Print bar -->
+<div class="no-print">
+  <span>RevShield Demo Guide &mdash; Print or Save as PDF (Cmd/Ctrl+P)</span>
+  <button onclick="window.print()">Save as PDF</button>
+</div>
+
+<!-- ================================================================
+     PAGE 1: COVER
+================================================================ -->
+<div class="page cover">
+  <h1>RevShield</h1>
+  <p class="subtitle">Autonomous GTM Revenue Agent</p>
+  <div style="width:80px;height:4px;background:linear-gradient(90deg,#06b6d4,#3b82f6);margin:0 auto 30px;border-radius:2px"></div>
+  <p style="color:#94a3b8;font-size:15px;max-width:480px;margin:0 auto 40px">
+    AI agent that autonomously detects, diagnoses, and heals revenue funnel leaks across your GTM stack in real time.
+  </p>
+  <div class="meta">
+    <strong>Demo Guide &amp; Video Script</strong><br>
+    Build Your Own GTM Agents Hackathon<br>
+    The AI Collective &times; Lynk<br>
+    April 18, 2026<br><br>
+    <strong>Live Demo:</strong> rev-shield.vercel.app<br>
+    <strong>GitHub:</strong> github.com/sandhipveera/rev-shield
+  </div>
+</div>
+
+<!-- ================================================================
+     PAGE 2: TABLE OF CONTENTS
+================================================================ -->
+<div class="page">
+  <span class="section-tag">Contents</span>
+  <h1>Demo Walkthrough Guide</h1>
+  <p>This document provides a complete step-by-step guide for demonstrating RevShield, along with a video voiceover script with timestamps.</p>
+
+  <h2>Part 1: Step-by-Step Demo</h2>
+  <ol class="toc">
+    <li><a href="#setup">Pre-Demo Setup</a></li>
+    <li><a href="#intro">Opening &mdash; The Problem</a></li>
+    <li><a href="#datasource">Data Source Selection</a></li>
+    <li><a href="#pipeline">Running the Analysis Pipeline</a></li>
+    <li><a href="#results">Reading the Results</a></li>
+    <li><a href="#agent-actions">Autonomous Agent Actions</a></li>
+    <li><a href="#attribution">Campaign Attribution</a></li>
+    <li><a href="#chat">Minds AI Chat Agent</a></li>
+    <li><a href="#apify">Apify Competitive Intelligence</a></li>
+    <li><a href="#drilldowns">Interactive Drill-Downs</a></li>
+    <li><a href="#closing">Closing &mdash; Key Differentiators</a></li>
+  </ol>
+
+  <h2>Part 2: Video Voiceover Script</h2>
+  <p>Full narration script with timestamps, screen actions, and transition cues.</p>
+
+  <h2>Part 3: Technical Architecture</h2>
+  <p>Quick reference for technical Q&amp;A.</p>
+</div>
+
+<!-- ================================================================
+     PAGE 3: PRE-DEMO SETUP
+================================================================ -->
+<div class="page" id="setup">
+  <span class="section-tag">Step 0</span>
+  <h1>Pre-Demo Setup</h1>
+  <p>Complete these steps before starting the live demo.</p>
+
+  <div class="step-list">
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <strong>Open the live site</strong>
+        <p>Navigate to <strong>rev-shield.vercel.app</strong> in Chrome. Enter the password when prompted.</p>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <strong>Reset the UI</strong>
+        <p>Refresh the page so the pipeline is in its initial state (no results showing). The "Demo" tab should be selected by default in the Data Source panel.</p>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <strong>Collapse the Data Source panel</strong>
+        <p>Click the panel header to collapse it &mdash; this gives a cleaner starting view with the pipeline stages and Analyze button visible.</p>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <strong>Enable sound</strong>
+        <p>Make sure the Sound button (top right) is enabled. The analysis pipeline has audio cues that make the demo more engaging.</p>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <strong>Have a second tab ready</strong>
+        <p>Open the slide deck at <strong>rev-shield.vercel.app/demo.html</strong> in a separate tab for the intro slides if needed.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout tip">
+    <strong>Tip:</strong> The demo runs best on a large screen. If presenting on a projector, zoom to 110-125% for better visibility of the dashboard metrics.
+  </div>
+</div>
+
+<!-- ================================================================
+     PAGE 4: THE PROBLEM
+================================================================ -->
+<div class="page" id="intro">
+  <span class="section-tag">Step 1</span>
+  <h1>Opening &mdash; The Problem</h1>
+  <p>Start by framing the problem before showing the product.</p>
+
+  <h3>What to say</h3>
+  <div class="callout info">
+    "Every GTM team has revenue leaks they don't know about. A payment gateway fails silently, a landing page loads 3 seconds too slow on mobile, a promo code breaks &mdash; and you don't find out until the weekly report. By then, you've lost tens of thousands of dollars."
+  </div>
+
+  <h3>Key stats to mention</h3>
+  <div class="metric-row">
+    <div class="metric-card">
+      <div class="label">Avg Detection Time</div>
+      <div class="value red">72 hrs</div>
+      <div class="sub">industry average</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">RevShield Detection</div>
+      <div class="value green">&lt; 5 min</div>
+      <div class="sub">real-time monitoring</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Revenue Saved</div>
+      <div class="value cyan">$32K+</div>
+      <div class="sub">per incident (7-day)</div>
+    </div>
+  </div>
+
+  <h3>Transition</h3>
+  <p>"RevShield is an autonomous GTM agent that detects, diagnoses, and heals these leaks in real time. Let me show you."</p>
+</div>
+
+<!-- ================================================================
+     PAGE 5: DATA SOURCES
+================================================================ -->
+<div class="page" id="datasource">
+  <span class="section-tag">Step 2</span>
+  <h1>Data Source Selection</h1>
+  <p>Expand the Data Source panel to show the breadth of integrations.</p>
+
+  <h3>What to show</h3>
+  <p>Click the Data Source header to expand it. Slowly hover over each tab to highlight the breadth:</p>
+
+  <table>
+    <thead><tr><th>Tab</th><th>What It Does</th><th>Demo Action</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Demo</strong></td><td>Built-in synthetic data with a degradation pattern</td><td>Default selected &mdash; use this for the main demo</td></tr>
+      <tr><td><strong>CSV Upload</strong></td><td>Drag &amp; drop funnel data CSV</td><td>Show the upload zone briefly</td></tr>
+      <tr><td><strong>Google Sheets</strong></td><td>Paste a public Sheets URL</td><td>Mention "connects to live spreadsheets"</td></tr>
+      <tr><td><strong>Shopify</strong></td><td>Real-time order data via Admin API</td><td>Mention "we have a live Shopify store connected"</td></tr>
+      <tr><td><strong>Stripe</strong></td><td>Payment &amp; charge data</td><td>Mention "direct Stripe integration"</td></tr>
+      <tr><td><strong>Scenario</strong></td><td>Generate custom degradation scenarios</td><td>Click briefly to show preset options</td></tr>
+      <tr><td><strong>Apify Intel</strong> <span class="badge prize">$500</span></td><td>Competitive intelligence scraping</td><td>Show the 3 modes &mdash; demo separately (Step 8)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout tip">
+    <strong>Tip:</strong> Say "RevShield connects to your entire GTM stack &mdash; Shopify, Stripe, Google Sheets, CSV, and even Apify for competitive intelligence. For this demo, we'll use our built-in scenario."
+  </div>
+
+  <p>Click back to the <strong>Demo</strong> tab and collapse the panel.</p>
+</div>
+
+<!-- ================================================================
+     PAGE 6: PIPELINE
+================================================================ -->
+<div class="page" id="pipeline">
+  <span class="section-tag">Step 3</span>
+  <h1>Running the Analysis Pipeline</h1>
+  <p>This is the core demo moment. Click "Analyze Funnel" and narrate each stage.</p>
+
+  <h3>The 5-Stage Pipeline</h3>
+  <div class="pipeline-flow">
+    <div class="pipeline-step">Detect</div>
+    <span class="pipeline-arrow">&rarr;</span>
+    <div class="pipeline-step">Score</div>
+    <span class="pipeline-arrow">&rarr;</span>
+    <div class="pipeline-step">Diagnose</div>
+    <span class="pipeline-arrow">&rarr;</span>
+    <div class="pipeline-step">Heal</div>
+    <span class="pipeline-arrow">&rarr;</span>
+    <div class="pipeline-step">Verify</div>
+  </div>
+
+  <h3>What to do</h3>
+  <div class="step-list">
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <strong>Click "Analyze Funnel"</strong>
+        <p>The button pulses with a cyan glow. Click it and watch the pipeline stages light up in sequence.</p>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <strong>Narrate each stage as it activates</strong>
+        <p><strong>Detect:</strong> "The agent is scanning all funnel segments for anomalies..."<br>
+        <strong>Score:</strong> "Now it's calculating the RRAF risk score..."<br>
+        <strong>Diagnose:</strong> "Running LIFT diagnosis to find the root cause..."<br>
+        <strong>Heal:</strong> "Generating remediation actions..."<br>
+        <strong>Verify:</strong> "Validating the fix will work..."</p>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <strong>Wait for results to appear</strong>
+        <p>Results stream in via Server-Sent Events. The Revenue Ticker appears first (red, counting up losses), then each section animates in.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <strong>Timing:</strong> The full pipeline takes 8-12 seconds. Use this time to narrate &mdash; don't stand in silence.
+  </div>
+</div>
+
+<!-- ================================================================
+     PAGE 7: READING RESULTS
+================================================================ -->
+<div class="page" id="results">
+  <span class="section-tag">Step 4</span>
+  <h1>Reading the Results</h1>
+  <p>Scroll through each results section and explain the key insights.</p>
+
+  <h2>A. Revenue Leak Detection</h2>
+  <div class="metric-row">
+    <div class="metric-card">
+      <div class="label">Segment</div>
+      <div class="value" style="font-size:16px;color:#1e293b">Paid Social Mobile</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Daily Loss</div>
+      <div class="value red">$4,599</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Drop</div>
+      <div class="value amber">16.5%</div>
+      <div class="sub">below baseline</div>
+    </div>
+  </div>
+  <p>"The agent found a high-severity leak in Paid Social Mobile. Checkout-to-paid conversion dropped 16.5% below baseline, costing $4,599 per day."</p>
+
+  <h2>B. RRAF Score (80/100)</h2>
+  <p>Point to the circular score gauge and explain each component:</p>
+  <table>
+    <thead><tr><th>Component</th><th>Score</th><th>Weight</th><th>What It Means</th></tr></thead>
+    <tbody>
+      <tr><td>Risk</td><td>74%</td><td>30%</td><td>How dangerous is this issue</td></tr>
+      <tr><td>Root Cause</td><td>100%</td><td>20%</td><td>Confidence in diagnosis</td></tr>
+      <tr><td>Revenue</td><td>82%</td><td>35%</td><td>Financial impact severity</td></tr>
+      <tr><td>Frequency</td><td>50%</td><td>15%</td><td>How often this pattern occurs</td></tr>
+    </tbody>
+  </table>
+
+  <h2>C. LIFT Diagnosis</h2>
+  <p>"The LIFT framework identified <strong>Friction</strong> as the primary category &mdash; checkout latency spikes and payment processing errors are the root cause."</p>
+
+  <h2>D. Remediation Plan</h2>
+  <p>Scroll to show the numbered action items. Point out the priority level and estimated time to fix.</p>
+</div>
+
+<!-- ================================================================
+     PAGE 8: AGENT ACTIONS
+================================================================ -->
+<div class="page" id="agent-actions">
+  <span class="section-tag">Step 5</span>
+  <h1>Autonomous Agent Actions</h1>
+  <p>This is a key differentiator. Show the human-in-the-loop guardrails.</p>
+
+  <h3>What to say</h3>
+  <div class="callout info">
+    "RevShield doesn't just detect problems &mdash; it takes action. But with guardrails. Low-risk actions like Slack alerts and infrastructure scaling are auto-approved. High-risk actions like pausing ads or deploying discounts require human approval."
+  </div>
+
+  <h3>Actions to demonstrate</h3>
+  <table>
+    <thead><tr><th>Action</th><th>Risk</th><th>Status</th><th>Demo Action</th></tr></thead>
+    <tbody>
+      <tr><td>Send Slack Alert</td><td><span class="badge low">Low</span></td><td>Auto-approved</td><td>Already executed (green check)</td></tr>
+      <tr><td>Scale Infrastructure</td><td><span class="badge low">Low</span></td><td>Auto-approved</td><td>Already executed (green check)</td></tr>
+      <tr><td>Pause Ad Campaigns</td><td><span class="badge medium">Medium</span></td><td>Awaiting approval</td><td><strong>Click "Approve"</strong> live</td></tr>
+      <tr><td>Deploy Recovery Discount</td><td><span class="badge medium">Medium</span></td><td>Awaiting approval</td><td>Click "Approve" or explain</td></tr>
+      <tr><td>Rollback Deployment</td><td><span class="badge high">High</span></td><td>Awaiting approval</td><td>Explain why this needs human review</td></tr>
+    </tbody>
+  </table>
+
+  <div class="step-list">
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <strong>Point out auto-approved actions</strong>
+        <p>"Notice the Slack alert and infra scaling were auto-approved &mdash; low risk, high value, no need to wait for a human."</p>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <strong>Click "Approve" on Pause Ad Campaigns</strong>
+        <p>"For medium-risk actions, the agent waits for approval. I'll approve pausing the ads..." <em>(click)</em> "...and it executes immediately. Saves $1,380/day in wasted ad spend."</p>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <strong>Show the execution log</strong>
+        <p>Scroll down to show the timestamped execution log at the bottom of the actions panel.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     PAGE 9: CAMPAIGN ATTRIBUTION
+================================================================ -->
+<div class="page" id="attribution">
+  <span class="section-tag">Step 6</span>
+  <h1>Campaign Attribution &amp; Wasted Spend</h1>
+  <p>Scroll to show the campaign attribution section with ad spend analysis.</p>
+
+  <h3>Key metrics to highlight</h3>
+  <div class="metric-row">
+    <div class="metric-card">
+      <div class="label">Total Daily Ad Spend</div>
+      <div class="value" style="color:#1e293b">$4,200</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Wasted Spend</div>
+      <div class="value red">$623</div>
+      <div class="sub">15% of budget</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">ROAS Impact</div>
+      <div class="value amber">2.7x</div>
+      <div class="sub">was 3.8x</div>
+    </div>
+  </div>
+
+  <h3>What to say</h3>
+  <div class="callout info">
+    "RevShield doesn't just find the leak &mdash; it calculates exactly how much ad spend you're wasting on a broken funnel. In this case, $623/day is being spent driving traffic to a checkout that's failing. The ROAS dropped from 3.8x to 2.7x. By pausing those campaigns automatically, we stop the bleeding."
+  </div>
+
+  <p>Point out the ROAS comparison chart (Normal vs Degraded) and the Ad Spend Breakdown pie chart.</p>
+</div>
+
+<!-- ================================================================
+     PAGE 10: CHAT AGENT
+================================================================ -->
+<div class="page" id="chat">
+  <span class="section-tag">Step 7</span>
+  <h1>Minds AI Chat Agent</h1>
+  <p>Click the floating chat button (bottom right) to open the conversational agent.</p>
+
+  <div class="callout success">
+    <strong>Prize Integration:</strong> This demonstrates the Minds AI integration for the AirPods prize.
+  </div>
+
+  <h3>Demo flow</h3>
+  <div class="step-list">
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <strong>Click the chat bubble</strong>
+        <p>The cyan chat button at the bottom right opens the Funnel Agent panel.</p>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <strong>Click "What's wrong with my funnel?"</strong>
+        <p>Use the quick prompt button. The agent responds with a contextualized summary including specific numbers from the analysis.</p>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <strong>Ask "How much am I losing?"</strong>
+        <p>Type this or click the quick prompt. The agent breaks down daily loss, 7-day projection, and wasted ad spend.</p>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <strong>Ask "What should I do?"</strong>
+        <p>The agent references the autonomous actions panel and recommends specific next steps.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>What to say</h3>
+  <div class="callout info">
+    "You can also talk to your funnel. This is our Minds AI integration &mdash; a conversational agent that understands your entire analysis context. Ask it anything: what's wrong, how much you're losing, what to do next. It's like having a revenue analyst on call 24/7."
+  </div>
+</div>
+
+<!-- ================================================================
+     PAGE 11: APIFY
+================================================================ -->
+<div class="page" id="apify">
+  <span class="section-tag">Step 8</span>
+  <h1>Apify Competitive Intelligence</h1>
+  <p>Show the Apify integration for the $500 special prize.</p>
+
+  <div class="callout success">
+    <strong>$500 Prize Integration:</strong> Apify web scraping for GTM competitive intelligence.
+  </div>
+
+  <h3>Three scraping modes</h3>
+  <table>
+    <thead><tr><th>Mode</th><th>Use Case</th><th>What It Scrapes</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Competitor Pricing</strong></td><td>Monitor competitor product prices</td><td>Price, currency, availability, title</td></tr>
+      <tr><td><strong>Landing Page Health</strong></td><td>Check your own landing pages</td><td>Status codes, SSL, broken links, load time</td></tr>
+      <tr><td><strong>Review Sentiment</strong></td><td>Track brand reputation</td><td>Ratings from Trustpilot, G2, Capterra</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Demo flow</h3>
+  <div class="step-list">
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <strong>Click the "Apify Intel" tab</strong>
+        <p>Show the $500 Prize badge and the three mode selector cards.</p>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <strong>Explain the integration</strong>
+        <p>"This uses Apify's Cheerio Scraper actor to extract competitive intelligence. You enter your token, paste competitor URLs, and get structured data back &mdash; prices, health checks, or sentiment scores."</p>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <strong>If you have an Apify token, run a live scrape</strong>
+        <p>Enter the token, paste a URL, and click Run Scrape. Results appear in the Competitive Intelligence section below.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout tip">
+    <strong>If no Apify token:</strong> Just show the UI and explain: "In production, this feeds competitor pricing data into the funnel analysis. If a competitor drops prices and your conversion dips, RevShield correlates the two."
+  </div>
+</div>
+
+<!-- ================================================================
+     PAGE 12: DRILL-DOWNS
+================================================================ -->
+<div class="page" id="drilldowns">
+  <span class="section-tag">Step 9</span>
+  <h1>Interactive Drill-Downs</h1>
+  <p>Click on any result card to show the drill-down modals.</p>
+
+  <h3>Available drill-downs</h3>
+  <table>
+    <thead><tr><th>Click Target</th><th>Modal Shows</th></tr></thead>
+    <tbody>
+      <tr><td>RRAF Score card</td><td>Detailed RRAF breakdown with time-series chart</td></tr>
+      <tr><td>Leak severity cards</td><td>Segment comparison with revenue impact</td></tr>
+      <tr><td>LIFT Diagnosis section</td><td>Hypothesis details with signal evidence</td></tr>
+      <tr><td>Remediation section</td><td>Detailed action plan with implementation notes</td></tr>
+      <tr><td>Impact projection cards</td><td>Revenue recovery scenarios with confidence intervals</td></tr>
+      <tr><td>Funnel stages</td><td>Per-stage conversion analysis</td></tr>
+      <tr><td>Incident timeline cards</td><td>Historical incident details</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout tip">
+    <strong>Demo tip:</strong> Click the RRAF score card &mdash; it has the most impressive drill-down with an animated chart. Then click the LIFT diagnosis section for the root cause details.
+  </div>
+</div>
+
+<!-- ================================================================
+     PAGE 13: CLOSING
+================================================================ -->
+<div class="page" id="closing">
+  <span class="section-tag">Step 10</span>
+  <h1>Closing &mdash; Key Differentiators</h1>
+
+  <h3>What to say</h3>
+  <div class="callout info">
+    "Let me recap what makes RevShield different from existing tools:"
+  </div>
+
+  <div class="step-list">
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <strong>Autonomous, not just analytics</strong>
+        <p>It doesn't just show you dashboards &mdash; it takes action. Pause ads, deploy discounts, send alerts, scale infrastructure.</p>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <strong>Human-in-the-loop guardrails</strong>
+        <p>High-risk actions require approval. Low-risk actions auto-execute. You stay in control.</p>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <strong>Full GTM stack integration</strong>
+        <p>Shopify, Stripe, Google Sheets, CSV, Apify &mdash; all in one agent.</p>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <strong>Competitive intelligence (Apify)</strong>
+        <p>Monitor competitor pricing, landing page health, and review sentiment alongside your funnel.</p>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <strong>Conversational interface (Minds AI)</strong>
+        <p>Talk to your funnel. Ask questions, get answers with real data.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout success">
+    <strong>Closing line:</strong> "RevShield is the revenue agent that never sleeps. It watches your funnel 24/7, catches problems before your weekly report does, and fixes them autonomously &mdash; with your approval. Thank you!"
+  </div>
+</div>
+
+<!-- ================================================================
+     PAGE 14: VIDEO VOICEOVER SCRIPT
+================================================================ -->
+<div class="page">
+  <span class="section-tag">Part 2</span>
+  <h1>Video Voiceover Script</h1>
+  <p>Full narration with timestamps and screen actions. Total runtime: ~4 minutes.</p>
+
+  <div class="callout tip">
+    <strong>Recording tip:</strong> Record the screen capture first, then record the voiceover using this script. Alternatively, use an AI voice tool (ElevenLabs, etc.) with this text.
+  </div>
+
+  <h2>0:00 &ndash; 0:15 | Title Card</h2>
+  <div class="script-block">
+    <span class="action">[Screen: RevShield landing page, freshly loaded, pipeline visible]</span>
+    <span class="timestamp">0:00</span> What if your revenue funnel could heal itself?
+    <br><br>
+    <span class="timestamp">0:05</span> Every GTM team bleeds revenue from silent failures &mdash; broken checkouts, slow landing pages, failed payment gateways. Most don't find out for days.
+    <br><br>
+    <span class="timestamp">0:12</span> RevShield changes that. It's an autonomous GTM revenue agent.
+  </div>
+
+  <h2>0:15 &ndash; 0:35 | Data Sources</h2>
+  <div class="script-block">
+    <span class="action">[Screen: Click Data Source panel to expand. Slowly hover over each tab.]</span>
+    <span class="timestamp">0:15</span> RevShield connects to your entire GTM stack. Shopify for orders, Stripe for payments, Google Sheets for manual data, and even Apify for competitive intelligence.
+    <br><br>
+    <span class="action">[Screen: Click "Apify Intel" tab briefly to show the $500 badge and 3 modes, then back to Demo tab.]</span>
+    <span class="timestamp">0:25</span> That Apify integration lets you scrape competitor pricing, check landing page health, and monitor review sentiment &mdash; all feeding into the same analysis.
+    <br><br>
+    <span class="timestamp">0:32</span> For this demo, we're using our built-in scenario with a real degradation pattern.
+  </div>
+
+  <h2>0:35 &ndash; 1:05 | Running the Pipeline</h2>
+  <div class="script-block">
+    <span class="action">[Screen: Collapse Data Source panel. Click "Analyze Funnel" button.]</span>
+    <span class="timestamp">0:35</span> Watch the five-stage pipeline in action.
+    <br><br>
+    <span class="action">[Screen: Pipeline stages light up one by one with sound effects.]</span>
+    <span class="timestamp">0:38</span> First, it detects anomalies across all funnel segments. Then it scores the risk using our RRAF framework. Next, it diagnoses the root cause with the LIFT methodology. Then it generates healing actions. And finally, it verifies the fix.
+    <br><br>
+    <span class="action">[Screen: Revenue Ticker appears, counting up in red.]</span>
+    <span class="timestamp">0:58</span> That red ticker? That's your revenue loss counting up in real time. Four thousand five hundred ninety-nine dollars &mdash; every single day.
+  </div>
+
+  <h2>1:05 &ndash; 1:40 | Results</h2>
+  <div class="script-block">
+    <span class="action">[Screen: Scroll to show funnel visualization and leak cards.]</span>
+    <span class="timestamp">1:05</span> RevShield found a high-severity leak in Paid Social Mobile. The checkout-to-paid conversion dropped sixteen point five percent below baseline.
+    <br><br>
+    <span class="action">[Screen: Scroll to RRAF score section. Point to the circular gauge showing 80.]</span>
+    <span class="timestamp">1:15</span> The RRAF score is eighty out of a hundred. That's critical. Root cause confidence is at one hundred percent &mdash; the agent is certain about what's wrong.
+    <br><br>
+    <span class="action">[Screen: Scroll to LIFT Diagnosis.]</span>
+    <span class="timestamp">1:25</span> The LIFT diagnosis identified Friction as the primary category. Checkout API latency spiked, causing payment failures and cart abandonment.
+    <br><br>
+    <span class="action">[Screen: Scroll to Remediation Plan.]</span>
+    <span class="timestamp">1:33</span> And here's the remediation plan &mdash; five concrete steps, critical priority, estimated time to fix.
+  </div>
+</div>
+
+<!-- ================================================================
+     PAGE 15: VIDEO SCRIPT CONTINUED
+================================================================ -->
+<div class="page">
+  <h2>1:40 &ndash; 2:20 | Agent Actions</h2>
+  <div class="script-block">
+    <span class="action">[Screen: Scroll to Autonomous Agent Actions section.]</span>
+    <span class="timestamp">1:40</span> But here's where RevShield goes beyond analytics. It doesn't just tell you what's wrong &mdash; it acts.
+    <br><br>
+    <span class="timestamp">1:46</span> Notice these two actions already have green checkmarks. The Slack alert and infrastructure scaling were auto-approved &mdash; they're low risk and high value.
+    <br><br>
+    <span class="action">[Screen: Point to the "Pause Underperforming Ad Campaigns" card with Approve/Reject buttons.]</span>
+    <span class="timestamp">1:55</span> But pausing ad campaigns? That's medium risk. The agent waits for human approval. This is the human-in-the-loop guardrail.
+    <br><br>
+    <span class="action">[Screen: Click "Approve" on Pause Ads. Watch it execute with animation.]</span>
+    <span class="timestamp">2:05</span> I'll approve it. Boom &mdash; ads paused. That just saved thirteen hundred and eighty dollars per day in wasted ad spend.
+    <br><br>
+    <span class="action">[Screen: Show execution log at bottom.]</span>
+    <span class="timestamp">2:12</span> Every action is logged with a timestamp. Full audit trail.
+  </div>
+
+  <h2>2:20 &ndash; 2:45 | Campaign Attribution</h2>
+  <div class="script-block">
+    <span class="action">[Screen: Scroll to Campaign Attribution section. Show the charts.]</span>
+    <span class="timestamp">2:20</span> RevShield also calculates your wasted ad spend. You're spending four thousand two hundred dollars a day on Paid Social Mobile ads. Six hundred and twenty-three of that is going to a broken funnel. Your ROAS dropped from three point eight X to two point seven X.
+    <br><br>
+    <span class="action">[Screen: Point to the per-channel cards showing CPC, CPA, Wasted, ROAS.]</span>
+    <span class="timestamp">2:35</span> Every channel gets its own attribution card with CPC, CPA, wasted spend, and the ROAS impact. This is the data your CFO wants to see.
+  </div>
+
+  <h2>2:45 &ndash; 3:20 | Chat Agent</h2>
+  <div class="script-block">
+    <span class="action">[Screen: Click the floating chat button at bottom right.]</span>
+    <span class="timestamp">2:45</span> And if you want to ask questions instead of scrolling through dashboards, just talk to your funnel.
+    <br><br>
+    <span class="action">[Screen: Click "What's wrong with my funnel?" quick prompt. Show response.]</span>
+    <span class="timestamp">2:50</span> This is our Minds AI integration. It's a conversational agent that understands your entire analysis context. Watch &mdash; I ask "what's wrong with my funnel" and it gives me a contextualized answer with specific numbers.
+    <br><br>
+    <span class="action">[Screen: Type "How much am I losing?" and send.]</span>
+    <span class="timestamp">3:05</span> "How much am I losing?" &mdash; and it breaks down daily loss, seven-day projection, and wasted ad spend. Like having a revenue analyst on speed dial.
+    <br><br>
+    <span class="action">[Screen: Close the chat panel.]</span>
+    <span class="timestamp">3:15</span> It's like having a revenue analyst that never sleeps.
+  </div>
+
+  <h2>3:20 &ndash; 3:50 | Closing</h2>
+  <div class="script-block">
+    <span class="action">[Screen: Scroll to show the "Pipeline Complete - Remediation Verified" banner.]</span>
+    <span class="timestamp">3:20</span> To recap: RevShield detected a sixteen percent conversion drop in under ten seconds. It scored the risk, diagnosed the root cause as checkout friction, generated five remediation actions, and autonomously paused bleeding ad spend &mdash; all with human approval where it matters.
+    <br><br>
+    <span class="action">[Screen: Scroll to show the full trend chart recovering.]</span>
+    <span class="timestamp">3:38</span> The funnel is already recovering. Revenue is coming back.
+    <br><br>
+    <span class="action">[Screen: Back to top, showing the RevShield header.]</span>
+    <span class="timestamp">3:44</span> RevShield. The autonomous GTM agent that detects, diagnoses, and heals your revenue funnel. Thank you.
+  </div>
+</div>
+
+<!-- ================================================================
+     PAGE 16: TECHNICAL ARCHITECTURE
+================================================================ -->
+<div class="page">
+  <span class="section-tag">Part 3</span>
+  <h1>Technical Architecture</h1>
+  <p>Quick reference for Q&amp;A from judges.</p>
+
+  <h2>Stack</h2>
+  <table>
+    <thead><tr><th>Layer</th><th>Technology</th></tr></thead>
+    <tbody>
+      <tr><td>Frontend</td><td>Next.js 16 (App Router), React 19, Tailwind CSS 4, Framer Motion, Recharts</td></tr>
+      <tr><td>Backend</td><td>Next.js API Routes (Server-Sent Events for streaming pipeline)</td></tr>
+      <tr><td>AI / LLM</td><td>Claude API (narrative generation), Minds AI (conversational agent)</td></tr>
+      <tr><td>Data Sources</td><td>Shopify Admin API, Stripe API, Google Sheets, CSV parser, Apify Cheerio Scraper</td></tr>
+      <tr><td>Hosting</td><td>Vercel (production), Vercel Cron Jobs (daily order generation)</td></tr>
+      <tr><td>Auth</td><td>Cookie-based password protection (AuthGate component)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Key Algorithms</h2>
+  <table>
+    <thead><tr><th>Algorithm</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><strong>RRAF Scoring</strong></td><td>Weighted composite (Risk 30%, Root Cause 20%, Revenue 35%, Frequency 15%) for prioritizing incidents</td></tr>
+      <tr><td><strong>LIFT Diagnosis</strong></td><td>Categorizes root cause into Landing, Incentive, Friction, Trust with signal correlation</td></tr>
+      <tr><td><strong>Baseline Detection</strong></td><td>Statistical comparison of observed vs. expected conversion rates across segments</td></tr>
+      <tr><td><strong>Agent Actions</strong></td><td>Risk-tiered action proposals with auto-approve for low-risk, human approval for medium/high</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Hackathon Prize Integrations</h2>
+  <div class="metric-row">
+    <div class="metric-card">
+      <div class="label">Apify ($500 Prize)</div>
+      <div class="value cyan" style="font-size:16px">3 Modes</div>
+      <div class="sub">Pricing, Health, Sentiment</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Minds AI (AirPods)</div>
+      <div class="value cyan" style="font-size:16px">Chat Agent</div>
+      <div class="sub">Conversational funnel Q&amp;A</div>
+    </div>
+  </div>
+
+  <h2>File Structure (Key Files)</h2>
+  <table>
+    <thead><tr><th>File</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>src/app/page.tsx</code></td><td>Main dashboard (839 lines)</td></tr>
+      <tr><td><code>src/app/api/analyze-stream/</code></td><td>SSE pipeline (Detect → Score → Diagnose → Heal → Verify)</td></tr>
+      <tr><td><code>src/app/api/agent-actions/</code></td><td>Autonomous action proposals &amp; execution</td></tr>
+      <tr><td><code>src/app/api/fetch-apify/</code></td><td>Apify competitive intelligence scraping</td></tr>
+      <tr><td><code>src/app/api/minds-chat/</code></td><td>Conversational funnel agent</td></tr>
+      <tr><td><code>src/components/AgentActionsPanel.tsx</code></td><td>Human-in-the-loop action cards</td></tr>
+      <tr><td><code>src/components/CampaignAttribution.tsx</code></td><td>Ad spend &amp; wasted spend analysis</td></tr>
+      <tr><td><code>src/components/FunnelChatAgent.tsx</code></td><td>Floating chat widget</td></tr>
+    </tbody>
+  </table>
+</div>
+
+</body>
+</html>
