@@ -12,8 +12,11 @@ import BeforeAfterComparison from "@/components/BeforeAfterComparison";
 import IncidentTimeline, { type HistoricalIncident } from "@/components/IncidentTimeline";
 import ThresholdConfig, { type Thresholds } from "@/components/ThresholdConfig";
 import ExportButton from "@/components/ExportButton";
-import DataSourcePanel, { type DataPayload } from "@/components/DataSourcePanel";
+import DataSourcePanel, { type DataPayload, type ApifyIntelData } from "@/components/DataSourcePanel";
 import DrillDownModal, { type DrillDownType } from "@/components/DrillDownModal";
+import AgentActionsPanel from "@/components/AgentActionsPanel";
+import CampaignAttribution from "@/components/CampaignAttribution";
+import FunnelChatAgent from "@/components/FunnelChatAgent";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -73,6 +76,9 @@ export default function Home() {
   const [externalData, setExternalData] = useState<DataPayload | null>(null);
   const [dataSourceLabel, setDataSourceLabel] = useState<string>("Demo Data");
 
+  // Apify competitive intelligence
+  const [apifyIntel, setApifyIntel] = useState<ApifyIntelData | null>(null);
+
   // Drill-down modal
   const [drillDown, setDrillDown] = useState<{ isOpen: boolean; type: DrillDownType; data: any }>({ isOpen: false, type: null, data: null });
   const openDrillDown = useCallback((type: DrillDownType, data: any) => {
@@ -89,6 +95,10 @@ export default function Home() {
     } else {
       setDataSourceLabel("Demo Data");
     }
+  }, []);
+
+  const handleApifyResults = useCallback((data: ApifyIntelData) => {
+    setApifyIntel(data);
   }, []);
 
   const { playAlert, playDetect, playScore, playDiagnose, playHeal, playSuccess } = useSoundEffects();
@@ -325,7 +335,7 @@ export default function Home() {
             <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
               RevShield
             </h1>
-            <p className="text-sm text-slate-400 mt-1 tracking-wide">Self-Healing Funnel AI</p>
+            <p className="text-sm text-slate-400 mt-1 tracking-wide">Autonomous GTM Revenue Agent</p>
           </div>
           <div className="flex items-center gap-3">
             {/* Sound toggle */}
@@ -352,7 +362,7 @@ export default function Home() {
             DATA SOURCE PANEL
         ================================================================ */}
         <section className="mb-6">
-          <DataSourcePanel onDataReady={handleDataReady} isRunning={isRunning} />
+          <DataSourcePanel onDataReady={handleDataReady} onApifyResults={handleApifyResults} isRunning={isRunning} />
           {externalData && (
             <div className="mt-2 flex items-center gap-2 text-xs text-cyan-400">
               <span className="inline-block w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
@@ -706,6 +716,28 @@ export default function Home() {
         </AnimatePresence>
 
         {/* ================================================================
+            AUTONOMOUS AGENT ACTIONS
+        ================================================================ */}
+        <AnimatePresence>
+          {remediation && topIncident && (
+            <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-12">
+              <AgentActionsPanel incident={topIncident} visible={!!remediation} />
+            </motion.section>
+          )}
+        </AnimatePresence>
+
+        {/* ================================================================
+            CAMPAIGN ATTRIBUTION
+        ================================================================ */}
+        <AnimatePresence>
+          {leaks && leaks.length > 0 && verified && (
+            <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-12">
+              <CampaignAttribution leak={leak} leaks={leaks} visible={true} />
+            </motion.section>
+          )}
+        </AnimatePresence>
+
+        {/* ================================================================
             BEFORE / AFTER COMPARISON (#3)
         ================================================================ */}
         <AnimatePresence>
@@ -731,6 +763,125 @@ export default function Home() {
               <div className="bg-slate-900/60 border border-cyan-500/20 rounded-2xl p-6">
                 <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-line">{aiNarrative}</p>
               </div>
+            </motion.section>
+          )}
+        </AnimatePresence>
+
+        {/* ================================================================
+            APIFY COMPETITIVE INTELLIGENCE
+        ================================================================ */}
+        <AnimatePresence>
+          {apifyIntel && (
+            <motion.section initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mb-12">
+              <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-widest mb-4">
+                <span className="mr-2">&#x1F577;&#xFE0F;</span> Competitive Intelligence
+                <span className="ml-2 text-[10px] text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold">Apify</span>
+              </h2>
+
+              {/* Competitor Pricing Results */}
+              {apifyIntel.mode === "competitor-pricing" && (
+                <div className="bg-slate-900/60 border border-amber-500/20 rounded-2xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold text-amber-300">Competitor Price Monitor</h3>
+                    <div className="text-xs text-slate-500">
+                      {apifyIntel.summary.totalScraped} scraped &middot; {apifyIntel.summary.withPrices} with prices &middot; avg ${apifyIntel.summary.avgPrice}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {apifyIntel.results.map((r: any, i: number) => (
+                      <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                        className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4">
+                        <p className="text-xs text-slate-500 truncate mb-1">{r.url}</p>
+                        <p className="text-sm font-medium text-white truncate">{r.title}</p>
+                        <div className="flex items-baseline justify-between mt-2">
+                          <span className="text-xl font-bold text-amber-400">{r.price !== "N/A" ? `$${r.price}` : "N/A"}</span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                            r.availability === "InStock" ? "bg-green-500/10 text-green-400" : "bg-slate-700 text-slate-400"
+                          }`}>{r.availability === "InStock" ? "In Stock" : r.availability}</span>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Landing Page Health Results */}
+              {apifyIntel.mode === "landing-page-health" && (
+                <div className="bg-slate-900/60 border border-amber-500/20 rounded-2xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold text-amber-300">Landing Page Health</h3>
+                    <div className="text-xs text-slate-500">
+                      {apifyIntel.summary.healthy}/{apifyIntel.summary.totalChecked} healthy &middot; avg {apifyIntel.summary.avgLoadTimeMs}ms
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    {apifyIntel.results.map((r: any, i: number) => (
+                      <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
+                        className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-white truncate">{r.title}</p>
+                          <p className="text-xs text-slate-500 truncate">{r.url}</p>
+                        </div>
+                        <div className="flex items-center gap-3 ml-4">
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded ${
+                            r.status < 400 ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400"
+                          }`}>{r.status}</span>
+                          <span className={`text-xs ${r.hasSSL ? "text-green-400" : "text-red-400"}`}>
+                            {r.hasSSL ? "SSL" : "No SSL"}
+                          </span>
+                          <span className={`text-xs ${r.brokenLinks > 3 ? "text-red-400" : "text-slate-400"}`}>
+                            {r.brokenLinks} broken
+                          </span>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                  {apifyIntel.alerts && apifyIntel.alerts.length > 0 && (
+                    <div className="mt-4 p-3 bg-red-900/20 border border-red-500/20 rounded-lg">
+                      <p className="text-xs font-semibold text-red-400 mb-2">Alerts</p>
+                      {apifyIntel.alerts.map((a: any, i: number) => (
+                        <p key={i} className="text-xs text-red-300">{a.url} &mdash; {a.reason}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Review Sentiment Results */}
+              {apifyIntel.mode === "review-sentiment" && (
+                <div className="bg-slate-900/60 border border-amber-500/20 rounded-2xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold text-amber-300">Review Sentiment</h3>
+                    <div className="text-xs text-slate-500">
+                      {apifyIntel.summary.totalPlatforms} platforms &middot; avg {apifyIntel.summary.avgRating}/5 &middot; {apifyIntel.summary.totalReviews} total
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {apifyIntel.results.map((r: any, i: number) => (
+                      <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                        className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-bold text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded">{r.platform}</span>
+                          <div className="flex items-center gap-1">
+                            <span className="text-amber-400">&#x2B50;</span>
+                            <span className="text-lg font-bold text-white">{r.avgRating.toFixed(1)}</span>
+                            <span className="text-xs text-slate-500">/ 5</span>
+                          </div>
+                        </div>
+                        <p className="text-xs text-slate-400">{r.totalReviews.toLocaleString()} reviews</p>
+                        {r.recentNegative.length > 0 && (
+                          <div className="mt-2 pt-2 border-t border-slate-700/50">
+                            <p className="text-[10px] text-red-400/70 uppercase tracking-wider mb-1">Recent Negative</p>
+                            {r.recentNegative.slice(0, 2).map((text: string, j: number) => (
+                              <p key={j} className="text-xs text-slate-500 truncate">&ldquo;{text}&rdquo;</p>
+                            ))}
+                          </div>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </motion.section>
           )}
         </AnimatePresence>
@@ -833,6 +984,9 @@ export default function Home() {
 
       {/* Drill-down modal */}
       <DrillDownModal isOpen={drillDown.isOpen} onClose={closeDrillDown} type={drillDown.type} data={drillDown.data} />
+
+      {/* Floating chat agent (Minds AI) */}
+      <FunnelChatAgent incident={topIncident} />
     </div>
   );
 }

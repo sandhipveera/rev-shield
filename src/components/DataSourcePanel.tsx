@@ -14,12 +14,20 @@ export interface DataPayload {
   meta?: { segments: string[]; dateRange: { from: string; to: string }; rowCount: number; description?: string };
 }
 
+export interface ApifyIntelData {
+  mode: "competitor-pricing" | "landing-page-health" | "review-sentiment";
+  results: any[];
+  summary: any;
+  alerts?: any[];
+}
+
 interface Props {
   onDataReady: (data: DataPayload | null) => void;
+  onApifyResults?: (data: ApifyIntelData) => void;
   isRunning: boolean;
 }
 
-type DataSource = "demo" | "csv" | "sheets" | "shopify" | "stripe" | "scenario";
+type DataSource = "demo" | "csv" | "sheets" | "shopify" | "stripe" | "scenario" | "apify";
 
 const TABS: { id: DataSource; label: string; icon: string; badge?: string }[] = [
   { id: "demo", label: "Demo", icon: "🎯" },
@@ -28,9 +36,10 @@ const TABS: { id: DataSource; label: string; icon: string; badge?: string }[] = 
   { id: "shopify", label: "Shopify", icon: "🛒", badge: "API" },
   { id: "stripe", label: "Stripe", icon: "💳", badge: "API" },
   { id: "scenario", label: "Scenario", icon: "🧪" },
+  { id: "apify", label: "Apify Intel", icon: "🕷️", badge: "$500" },
 ];
 
-export default function DataSourcePanel({ onDataReady, isRunning }: Props) {
+export default function DataSourcePanel({ onDataReady, onApifyResults, isRunning }: Props) {
   const [activeTab, setActiveTab] = useState<DataSource>("demo");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -139,6 +148,9 @@ export default function DataSourcePanel({ onDataReady, isRunning }: Props) {
               )}
               {activeTab === "scenario" && (
                 <ScenarioTab onDataReady={onDataReady} setError={setError} setSuccess={setSuccess} />
+              )}
+              {activeTab === "apify" && (
+                <ApifyTab onApifyResults={onApifyResults} setLoading={setLoading} setError={setError} setSuccess={setSuccess} loading={loading} />
               )}
             </div>
           </motion.div>
@@ -645,6 +657,115 @@ function ScenarioTab({ onDataReady, setError, setSuccess }: {
           className="px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg text-sm font-medium transition-colors ml-auto"
         >
           Generate
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Apify Competitive Intel Tab
+// ---------------------------------------------------------------------------
+function ApifyTab({ onApifyResults, setLoading, setError, setSuccess, loading }: {
+  onApifyResults?: (data: ApifyIntelData) => void;
+  setLoading: (v: boolean) => void;
+  setError: (v: string | null) => void;
+  setSuccess: (v: string | null) => void;
+  loading: boolean;
+}) {
+  const [token, setToken] = useState("");
+  const [mode, setMode] = useState<"competitor-pricing" | "landing-page-health" | "review-sentiment">("competitor-pricing");
+  const [urlsText, setUrlsText] = useState("");
+
+  const MODES = [
+    { id: "competitor-pricing" as const, label: "Competitor Pricing", icon: "💰", desc: "Scrape product prices from competitor sites" },
+    { id: "landing-page-health" as const, label: "Landing Page Health", icon: "🏥", desc: "Check SSL, status codes, broken links" },
+    { id: "review-sentiment" as const, label: "Review Sentiment", icon: "⭐", desc: "Scrape ratings from Trustpilot, G2, Capterra" },
+  ];
+
+  const runScrape = async () => {
+    const urls = urlsText.split("\n").map((u) => u.trim()).filter(Boolean);
+    if (!token.trim()) { setError("Apify API token required"); return; }
+    if (urls.length === 0) { setError("Enter at least one URL"); return; }
+
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const res = await fetch("/api/fetch-apify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, mode, urls }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      onApifyResults?.(data);
+      const count = data.results?.length || 0;
+      setSuccess(`Scraped ${count} result${count !== 1 ? "s" : ""} via Apify (${mode.replace(/-/g, " ")})`);
+    } catch (err: any) {
+      setError(err.message || "Apify scrape failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 mb-1">
+        <span className="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-full">$500 Prize</span>
+        <p className="text-xs text-slate-400">Web scraping for GTM competitive intelligence via Apify</p>
+      </div>
+
+      {/* Mode selector */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        {MODES.map((m) => (
+          <button
+            key={m.id}
+            onClick={() => setMode(m.id)}
+            className={`p-3 rounded-lg border text-left transition-all text-xs ${
+              mode === m.id
+                ? "border-amber-500/50 bg-amber-900/20 text-amber-300"
+                : "border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600"
+            }`}
+          >
+            <div className="font-semibold text-sm mb-0.5">{m.icon} {m.label}</div>
+            <div className="text-slate-500 text-[11px]">{m.desc}</div>
+          </button>
+        ))}
+      </div>
+
+      {/* Token + URLs */}
+      <input
+        type="password"
+        placeholder="Apify API token (apify_api_...)"
+        value={token}
+        onChange={(e) => setToken(e.target.value)}
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none"
+      />
+      <textarea
+        placeholder={mode === "competitor-pricing"
+          ? "https://competitor.com/product-1\nhttps://competitor.com/product-2"
+          : mode === "landing-page-health"
+          ? "https://yoursite.com/landing-1\nhttps://yoursite.com/landing-2"
+          : "https://trustpilot.com/review/yourcompany\nhttps://g2.com/products/yourproduct"
+        }
+        value={urlsText}
+        onChange={(e) => setUrlsText(e.target.value)}
+        rows={3}
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none resize-none font-mono"
+      />
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] text-slate-600">
+          One URL per line. Token is sent directly to Apify and not stored.
+        </p>
+        <button
+          onClick={runScrape}
+          disabled={loading}
+          className="px-4 py-2 bg-amber-600 hover:bg-amber-500 disabled:bg-slate-700 rounded-lg text-sm font-medium transition-colors"
+        >
+          {loading ? "Scraping..." : "Run Scrape"}
         </button>
       </div>
     </div>
