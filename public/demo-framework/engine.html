@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demo Presentation</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  :root {
+    --primary:   #06b6d4;
+    --secondary: #3b82f6;
+    --accent:    #8b5cf6;
+    --danger:    #ef4444;
+    --warning:   #f59e0b;
+    --success:   #10b981;
+    --bg:        #0a0a1a;
+    --surface:   rgba(15, 23, 42, 0.8);
+    --border:    rgba(51, 65, 85, 0.5);
+    --text1:     #e2e8f0;
+    --text2:     #94a3b8;
+    --text3:     #64748b;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: #fff;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+  }
+
+  /* ── Slides ─────────────────────────────────────────── */
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px;
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+    pointer-events: none;
+  }
+  .slide.active { opacity: 1; transform: translateY(0); pointer-events: all; }
+  .slide.exit   { opacity: 0; transform: translateY(-40px); }
+
+  /* ── Background ─────────────────────────────────────── */
+  .grid-bg {
+    position: fixed; inset: 0; pointer-events: none; opacity: 0.03; z-index: 0;
+    background-image:
+      linear-gradient(rgba(6,182,212,0.3) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(6,182,212,0.3) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+  .orb {
+    position: fixed; border-radius: 50%; filter: blur(120px); opacity: 0.15; z-index: 0;
+    animation: float 8s ease-in-out infinite;
+  }
+  .orb-1 { width: 400px; height: 400px; top: -100px; right: -100px; }
+  .orb-2 { width: 300px; height: 300px; bottom: -50px; left: -50px; animation-delay: 3s; }
+  .orb-3 { width: 250px; height: 250px; top: 50%; left: 50%; animation-delay: 5s; }
+  @keyframes float {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(30px, -30px); }
+  }
+
+  /* ── Typography ─────────────────────────────────────── */
+  .title {
+    font-size: 72px; font-weight: 900;
+    background: var(--title-gradient, linear-gradient(135deg, var(--primary), var(--secondary), var(--accent)));
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    line-height: 1.1; text-align: center;
+  }
+  .subtitle { font-size: 24px; color: var(--text2); margin-top: 16px; font-weight: 300; text-align: center; letter-spacing: 0.05em; }
+  .section-label { font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em; color: var(--primary); margin-bottom: 20px; }
+  .big-number { font-size: 120px; font-weight: 900; line-height: 1; }
+  .caption { font-size: 20px; color: var(--text3); margin-top: 12px; text-align: center; max-width: 700px; line-height: 1.6; }
+  .hl-primary { color: var(--primary); font-weight: 600; }
+  .hl-danger  { color: var(--danger); font-weight: 600; }
+  .hl-success { color: var(--success); font-weight: 600; }
+  .hl-warning { color: var(--warning); font-weight: 600; }
+  .hl-accent  { color: var(--accent); font-weight: 600; }
+
+  /* ── Cards ──────────────────────────────────────────── */
+  .cards { display: grid; gap: 24px; max-width: 900px; margin-top: 40px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 28px; text-align: center; backdrop-filter: blur(20px);
+    transition: transform 0.3s, border-color 0.3s;
+  }
+  .card:hover { transform: translateY(-4px); border-color: rgba(6,182,212,0.4); }
+  .card-icon  { font-size: 36px; margin-bottom: 12px; }
+  .card-title { font-size: 16px; font-weight: 700; color: var(--text1); margin-bottom: 6px; }
+  .card-desc  { font-size: 13px; color: var(--text3); line-height: 1.5; }
+
+  /* ── Pipeline ───────────────────────────────────────── */
+  .pipeline { display: flex; align-items: center; gap: 8px; margin: 40px 0; }
+  .pipe-step {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    width: 120px; height: 100px; border-radius: 16px; border: 2px solid #1e293b;
+    background: rgba(15,23,42,0.6); transition: all 0.5s ease;
+  }
+  .pipe-step.lit { border-color: rgba(6,182,212,0.6); background: rgba(6,182,212,0.08); box-shadow: 0 0 30px rgba(6,182,212,0.2); }
+  .pipe-step .icon { font-size: 28px; margin-bottom: 4px; }
+  .pipe-step .label { font-size: 12px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; }
+  .pipe-step.lit .label { color: #67e8f9; }
+  .pipe-arrow { color: #1e293b; font-size: 20px; transition: color 0.5s; }
+  .pipe-arrow.lit { color: var(--primary); }
+
+  /* ── Funnel ─────────────────────────────────────────── */
+  .funnel-container { width: 100%; max-width: 700px; margin-top: 30px; }
+  .funnel-row { display: flex; align-items: center; margin-bottom: 8px; }
+  .funnel-label { width: 110px; text-align: right; font-size: 13px; font-weight: 600; color: var(--text2); padding-right: 16px; }
+  .funnel-label.leak { color: var(--danger); }
+  .funnel-bar-wrap { flex: 1; height: 36px; background: #0f172a; border-radius: 8px; overflow: hidden; }
+  .funnel-bar {
+    height: 100%; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.7);
+    transition: width 1.5s ease; width: 0%;
+  }
+
+  /* ── Donut ──────────────────────────────────────────── */
+  .donut-wrap { position: relative; width: 200px; height: 200px; margin: 20px 0; }
+  .donut-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .donut-bg   { fill: none; stroke: rgba(51,65,85,0.5); stroke-width: 12; }
+  .donut-fill { fill: none; stroke-width: 12; stroke-linecap: round; stroke-dasharray: 565.48; stroke-dashoffset: 565.48; transition: stroke-dashoffset 1.5s ease; }
+  .donut-text { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .donut-text .score { font-size: 52px; font-weight: 900; }
+  .donut-text .unit  { font-size: 12px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.2em; }
+
+  /* ── LIFT bars ──────────────────────────────────────── */
+  .lift-bars { max-width: 500px; width: 100%; margin-top: 30px; }
+  .lift-row { display: flex; align-items: center; margin-bottom: 12px; }
+  .lift-label { width: 100px; font-size: 14px; font-weight: 600; color: var(--text2); }
+  .lift-bar-wrap { flex: 1; height: 28px; background: #0f172a; border-radius: 6px; overflow: hidden; }
+  .lift-bar { height: 100%; border-radius: 6px; transition: width 1.2s ease; width: 0%; display: flex; align-items: center; padding-left: 10px; font-size: 12px; font-weight: 700; }
+
+  /* ── Stats row ──────────────────────────────────────── */
+  .stats-row { display: flex; gap: 32px; margin-top: 40px; flex-wrap: wrap; justify-content: center; }
+  .stat { text-align: center; background: var(--surface); border: 1px solid #1e293b; border-radius: 16px; padding: 24px 36px; }
+  .stat-value { font-size: 36px; font-weight: 800; }
+  .stat-label { font-size: 12px; color: var(--text3); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.1em; }
+
+  /* ── Impact cards ───────────────────────────────────── */
+  .impact-row { display: flex; gap: 24px; margin-top: 30px; flex-wrap: wrap; justify-content: center; }
+  .impact-card { flex: 1; min-width: 200px; padding: 28px; border-radius: 16px; text-align: center; border: 1px solid; }
+  .impact-card.danger  { background: rgba(239,68,68,0.08);  border-color: rgba(239,68,68,0.3); }
+  .impact-card.warning { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.3); }
+  .impact-card.success { background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.3); }
+
+  /* ── Badge ──────────────────────────────────────────── */
+  .badge { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; padding: 4px 12px; border-radius: 20px; margin-bottom: 12px; }
+  .badge.critical { background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+  .badge.high     { background: rgba(245,158,11,0.2); color: #fcd34d; border: 1px solid rgba(245,158,11,0.3); }
+
+  /* ── Tags ───────────────────────────────────────────── */
+  .tag { display: inline-block; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 6px; margin: 3px; }
+
+  /* ── Pills ──────────────────────────────────────────── */
+  .source-pills { display: flex; gap: 12px; margin-top: 30px; flex-wrap: wrap; justify-content: center; }
+  .pill {
+    display: flex; align-items: center; gap: 8px; background: var(--surface);
+    border: 1px solid #1e293b; border-radius: 12px; padding: 12px 20px;
+    font-size: 14px; font-weight: 600; color: var(--text2);
+  }
+  .pill .emoji { font-size: 20px; }
+
+  /* ── Two-col ────────────────────────────────────────── */
+  .two-col { display: flex; gap: 60px; align-items: center; max-width: 1000px; }
+  .two-col .col { flex: 1; }
+
+  /* ── Action list ────────────────────────────────────── */
+  .actions { text-align: left; max-width: 650px; margin-top: 24px; }
+  .action-item { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 14px; padding: 14px 18px; background: rgba(15,23,42,0.6); border: 1px solid #1e293b; border-radius: 12px; }
+  .action-num { width: 28px; height: 28px; border-radius: 8px; background: rgba(6,182,212,0.15); border: 1px solid rgba(6,182,212,0.4); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #67e8f9; flex-shrink: 0; }
+  .action-text { font-size: 14px; color: #cbd5e1; line-height: 1.5; }
+
+  /* ── Progress bar ───────────────────────────────────── */
+  .progress-wrap { position: fixed; bottom: 0; left: 0; right: 0; height: 4px; background: #0f172a; z-index: 100; }
+  .progress-bar { height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); transition: width 0.5s ease; width: 0%; }
+  .slide-counter { position: fixed; bottom: 20px; right: 30px; font-size: 13px; color: #334155; z-index: 100; font-weight: 500; }
+  .nav-hint { position: fixed; bottom: 20px; left: 30px; font-size: 12px; color: #1e293b; z-index: 100; }
+
+  /* ── Teleprompter panel ─────────────────────────────── */
+  .notes-panel {
+    position: fixed; top: 0; right: 0; bottom: 0; width: 340px;
+    background: rgba(0,0,0,0.95); backdrop-filter: blur(20px);
+    border-left: 1px solid #1e293b; z-index: 200;
+    transform: translateX(100%); transition: transform 0.3s ease;
+    display: flex; flex-direction: column;
+  }
+  .notes-panel.visible { transform: translateX(0); }
+  body.notes-open .slide { padding-right: 380px; }
+  body.notes-open .slide-counter { right: 370px; }
+  body.notes-open .progress-wrap { right: 340px; }
+  .notes-panel .notes-top { padding: 16px 20px; border-bottom: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .notes-panel .notes-header { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; color: var(--primary); }
+  .notes-panel .notes-timer { font-size: 13px; color: var(--primary); font-variant-numeric: tabular-nums; font-weight: 600; }
+  .notes-panel .notes-body { flex: 1; overflow: hidden; position: relative; }
+  .notes-panel .notes-scroll {
+    position: absolute; inset: 0; padding: 24px 20px 120px; overflow-y: auto; scroll-behavior: smooth;
+    mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 70%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 70%, transparent 100%);
+  }
+  .notes-panel .notes-text { font-size: 20px; color: var(--text1); line-height: 1.8; font-weight: 400; letter-spacing: 0.01em; }
+  .notes-panel .slide-indicator { padding: 8px 20px; font-size: 11px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.1em; border-bottom: 1px solid #1e293b; flex-shrink: 0; }
+  .notes-panel .slide-indicator span { color: var(--primary); }
+  .tp-controls { padding: 12px 20px; border-top: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; background: rgba(0,0,0,0.8); }
+  .tp-controls button { background: rgba(6,182,212,0.15); border: 1px solid rgba(6,182,212,0.3); color: #67e8f9; padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .tp-controls button:hover { background: rgba(6,182,212,0.25); }
+  .tp-controls button.active { background: rgba(6,182,212,0.35); border-color: var(--primary); }
+  .tp-controls .speed-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; }
+  .tp-controls .speed-value { font-size: 13px; color: var(--text2); font-weight: 600; margin: 0 8px; min-width: 24px; text-align: center; display: inline-block; }
+
+  /* ── Record mode ────────────────────────────────────── */
+  .record-overlay { position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,0.92); display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.4s; }
+  .record-overlay.visible { opacity: 1; pointer-events: all; }
+  .record-overlay .countdown { font-size: 140px; font-weight: 900; color: var(--primary); font-variant-numeric: tabular-nums; text-shadow: 0 0 60px rgba(6,182,212,0.5); }
+  .record-overlay .countdown-label { font-size: 18px; color: var(--text3); margin-top: 16px; text-transform: uppercase; letter-spacing: 0.2em; }
+  .rec-indicator { position: fixed; top: 20px; left: 20px; z-index: 300; display: none; align-items: center; gap: 8px; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.4); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; color: #fca5a5; text-transform: uppercase; letter-spacing: 0.1em; }
+  .rec-indicator.active { display: flex; }
+  .rec-dot { width: 10px; height: 10px; background: #ef4444; border-radius: 50%; animation: recPulse 1s ease-in-out infinite; }
+  @keyframes recPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }
+
+  /* ── Config selector ────────────────────────────────── */
+  .config-selector {
+    position: fixed; inset: 0; z-index: 1000; background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 40px;
+  }
+  .config-selector h1 { font-size: 36px; font-weight: 800; color: var(--text1); margin-bottom: 8px; }
+  .config-selector p { color: var(--text3); margin-bottom: 40px; font-size: 16px; }
+  .config-selector .config-list { display: flex; flex-direction: column; gap: 12px; min-width: 400px; }
+  .config-selector .config-item {
+    display: flex; align-items: center; gap: 16px; padding: 20px 24px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    cursor: pointer; transition: all 0.3s; text-decoration: none;
+  }
+  .config-selector .config-item:hover { border-color: rgba(6,182,212,0.4); transform: translateY(-2px); }
+  .config-selector .config-item .name { font-size: 18px; font-weight: 700; color: var(--text1); }
+  .config-selector .config-item .desc { font-size: 13px; color: var(--text3); margin-top: 2px; }
+
+  /* ── Animations ─────────────────────────────────────── */
+  .slide.active .animate-in { animation: fadeInUp 0.6s ease forwards; }
+  .animate-in { opacity: 0; }
+  .delay-1 { animation-delay: 0.2s !important; }
+  .delay-2 { animation-delay: 0.4s !important; }
+  .delay-3 { animation-delay: 0.6s !important; }
+  .delay-4 { animation-delay: 0.8s !important; }
+  .delay-5 { animation-delay: 1.0s !important; }
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<!-- Background (themed by config) -->
+<div class="grid-bg"></div>
+<div class="orb orb-1" id="orb1"></div>
+<div class="orb orb-2" id="orb2"></div>
+<div class="orb orb-3" id="orb3"></div>
+
+<!-- Chrome -->
+<div class="notes-panel" id="notesPanel">
+  <div class="notes-top">
+    <div class="notes-header">Teleprompter</div>
+    <div class="notes-timer" id="notesTimer">0:00</div>
+  </div>
+  <div class="slide-indicator" id="slideIndicator">Slide <span>1</span> of ?</div>
+  <div class="notes-body">
+    <div class="notes-scroll" id="notesScroll">
+      <div class="notes-text" id="notesText"></div>
+    </div>
+  </div>
+  <div class="tp-controls">
+    <button id="tpAutoBtn" onclick="toggleAutoScroll()">Auto-Scroll</button>
+    <div>
+      <span class="speed-label">Speed</span>
+      <button onclick="adjustSpeed(-1)">-</button>
+      <span class="speed-value" id="speedValue">2</span>
+      <button onclick="adjustSpeed(1)">+</button>
+    </div>
+  </div>
+</div>
+
+<div class="record-overlay" id="recordOverlay">
+  <div class="countdown" id="countdownNum">3</div>
+  <div class="countdown-label">Recording starts in...</div>
+  <div style="margin-top:40px;font-size:13px;color:#475569">Press <span style="color:#94a3b8">Esc</span> to cancel</div>
+</div>
+
+<div class="rec-indicator" id="recIndicator">
+  <div class="rec-dot"></div>
+  <span>REC</span>
+  <span id="recTime" style="color:#ef4444;margin-left:4px;font-variant-numeric:tabular-nums">0:00</span>
+</div>
+
+<div class="progress-wrap"><div class="progress-bar" id="progress"></div></div>
+<div class="slide-counter" id="counter"></div>
+<div class="nav-hint">Space / Arrow keys &middot; N = teleprompter &middot; R = record mode &middot; A = auto-play</div>
+
+<!-- Slide container (filled by JS) -->
+<div id="slideContainer"></div>
+
+<!-- Config selector (shown if no ?config param) -->
+<div class="config-selector" id="configSelector" style="display:none">
+  <h1>Demo Presentations</h1>
+  <p>Select a demo configuration to present</p>
+  <div class="config-list" id="configList"></div>
+</div>
+
+<script>
+// =====================================================================
+// CONFIG LOADER
+// =====================================================================
+const params = new URLSearchParams(window.location.search);
+const configName = params.get('config');
+
+if (configName) {
+  // Load the config script dynamically
+  const script = document.createElement('script');
+  script.src = 'configs/' + configName + '.js';
+  script.onload = () => initPresentation();
+  script.onerror = () => {
+    document.getElementById('configSelector').style.display = 'flex';
+    document.getElementById('configList').innerHTML =
+      '<div style="color:var(--danger);text-align:center;">Config "' + configName + '.js" not found.<br><br>' +
+      '<a href="engine.html" style="color:var(--primary)">Back to selector</a></div>';
+  };
+  document.head.appendChild(script);
+} else {
+  showConfigSelector();
+}
+
+function showConfigSelector() {
+  document.getElementById('configSelector').style.display = 'flex';
+  // Try to discover configs by loading a known list or showing instructions
+  const list = document.getElementById('configList');
+  // We list known configs — add yours here
+  const knownConfigs = [
+    { name: 'revshield',  title: 'RevShield', desc: 'Autonomous GTM Revenue Agent — 12 slides, 3:50 runtime' },
+    { name: '_template',  title: 'Starter Template', desc: 'Blank template — copy and customize for your product' },
+  ];
+  knownConfigs.forEach(c => {
+    const a = document.createElement('a');
+    a.className = 'config-item';
+    a.href = 'engine.html?config=' + c.name;
+    a.innerHTML = '<div><div class="name">' + c.title + '</div><div class="desc">' + c.desc + '</div></div>';
+    list.appendChild(a);
+  });
+
+  // Add "how to create" card
+  const howto = document.createElement('div');
+  howto.className = 'config-item';
+  howto.style.cursor = 'default';
+  howto.style.borderStyle = 'dashed';
+  howto.innerHTML = '<div><div class="name" style="color:var(--primary)">+ Create New Demo</div>' +
+    '<div class="desc">Copy configs/_template.js → configs/your-name.js, edit content, then open engine.html?config=your-name</div></div>';
+  list.appendChild(howto);
+}
+
+// =====================================================================
+// SLIDE RENDERERS — one function per slide type
+// =====================================================================
+const R = {}; // renderer map
+
+function themeColor(key) {
+  const t = DEMO_CONFIG.theme;
+  return t[key] || key; // allow raw hex too
+}
+
+function makeTag(tag) {
+  const c = themeColor(tag.color);
+  return `<span class="tag" style="background:${c}22;color:${c};border:1px solid ${c}55">${tag.text}</span>`;
+}
+
+R['title'] = (s, i) => `
+  <div class="slide${i===0?' active':''}" data-slide="${i}" data-note="${esc(s.note)}">
+    <div class="animate-in"><div class="title">${s.title}</div></div>
+    <div class="animate-in delay-1"><div class="subtitle">${s.subtitle || ''}</div></div>
+    ${s.tags ? `<div class="animate-in delay-2" style="margin-top:40px"><div class="source-pills">${s.tags.map(makeTag).join('')}</div></div>` : ''}
+    ${s.caption ? `<div class="animate-in delay-3"><p class="caption" style="margin-top:30px">${s.caption}</p></div>` : ''}
+  </div>`;
+
+R['big-stat'] = (s, i) => `
+  <div class="slide${i===0?' active':''}" data-slide="${i}" data-note="${esc(s.note)}">
+    <div class="animate-in"><div class="section-label">${s.label}</div></div>
+    <div class="animate-in delay-1"><div class="big-number" style="color:${themeColor(s.numberColor)}">${s.number}</div></div>
+    ${s.caption ? `<div class="animate-in delay-2"><p class="caption">${s.caption}</p></div>` : ''}
+    ${s.stats ? `<div class="animate-in delay-3"><div class="stats-row">${s.stats.map(st =>
+      `<div class="stat"><div class="stat-value" style="color:${themeColor(st.color)}">${st.value}</div><div class="stat-label">${st.label}</div></div>`
+    ).join('')}</div></div>` : ''}
+  </div>`;
+
+R['pipeline'] = (s, i) => {
+  const stepsHtml = s.steps.map((st, j) => {
+    const step = `<div class="pipe-step" id="ps-${i}-${j}"><span class="icon">${st.icon}</span><span class="label">${st.label}</span></div>`;
+    const arrow = j < s.steps.length - 1 ? `<span class="pipe-arrow" id="pa-${i}-${j}">&#x25B6;</span>` : '';
+    return step + arrow;
+  }).join('');
+  return `
+  <div class="slide${i===0?' active':''}" data-slide="${i}" data-note="${esc(s.note)}">
+    <div class="animate-in"><div class="section-label">${s.label}</div></div>
+    <div class="animate-in delay-1"><div class="pipeline" id="pipeline-${i}">${stepsHtml}</div></div>
+    ${s.caption ? `<div class="animate-in delay-2"><p class="caption">${s.caption}</p></div>` : ''}
+  </div>`;
+};
+
+R['pills'] = (s, i) => `
+  <div class="slide${i===0?' active':''}" data-slide="${i}" data-note="${esc(s.note)}">
+    <div class="animate-in"><div class="section-label">${s.label}</div></div>
+    <div class="animate-in delay-1"><p style="font-size:32px;font-weight:700;text-align:center">${s.headline}</p></div>
+    <div class="animate-in delay-2"><div class="source-pills" style="margin-top:30px">${
+      s.pills.map(p => `<div class="pill"><span class="emoji">${p.emoji}</span> ${p.text}</div>`).join('')
+    }</div></div>
+    ${s.caption ? `<div class="animate-in delay-3"><p class="caption" style="margin-top:24px">${s.caption}</p></div>` : ''}
+  </div>`;
+
+R['funnel'] = (s, i) => {
+  const barsHtml = s.bars.map(b => {
+    const c = themeColor(b.color);
+    const labelCls = b.isLeak ? 'funnel-label leak' : 'funnel-label';
+    const barBg = `background:linear-gradient(90deg,${c}4D,${c}26);border:1px solid ${c}55`;
+    const suffix = b.suffix ? `<span style="margin-left:10px;color:${c}">${b.suffix}</span>` : '';
+    return `<div class="funnel-row"><div class="${labelCls}">${b.label}</div><div class="funnel-bar-wrap"><div class="funnel-bar" data-width="${b.pct}" style="${barBg}">${b.pct}%${suffix}</div></div></div>`;
+  }).join('');
+  return `
+  <div class="slide${i===0?' active':''}" data-slide="${i}" data-note="${esc(s.note)}">
+    <div class="animate-in"><div class="section-label">${s.label}</div></div>
+    <div class="animate-in delay-1"><p style="font-size:28px;font-weight:700">${s.headline}</p>${s.headlineCaption ? `<p class="caption" style="margin-top:8px">${s.headlineCaption}</p>` : ''}</div>
+    <div class="funnel-container animate-in delay-2" id="funnel-${i}">${barsHtml}</div>
+  </div>`;
+};
+
+R['donut-bars'] = (s, i) => {
+  const dc = themeColor(s.donut.color);
+  const barsHtml = s.bars.map(b => {
+    const c = themeColor(b.color);
+    return `<div style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:4px"><span style="color:${c}">${b.icon} ${b.label}</span><span style="color:${c};font-weight:700">${b.pct}%</span></div>
+      <div style="height:8px;background:#0f172a;border-radius:4px"><div style="height:100%;width:${b.pct}%;background:${c};border-radius:4px"></div></div>
+      ${b.weight ? `<div style="font-size:10px;color:#475569;margin-top:2px">weight: ${b.weight}</div>` : ''}
+    </div>`;
+  }).join('');
+  return `
+  <div class="slide${i===0?' active':''}" data-slide="${i}" data-note="${esc(s.note)}">
+    <div class="animate-in"><div class="section-label">${s.label}</div></div>
+    <div class="two-col">
+      <div class="col" style="text-align:center">
+        <div class="animate-in delay-1">
+          <div class="donut-wrap" id="donut-${i}" style="margin:0 auto">
+            <svg viewBox="0 0 200 200"><circle class="donut-bg" cx="100" cy="100" r="90"/><circle class="donut-fill" id="donut-fill-${i}" cx="100" cy="100" r="90" style="stroke:${dc}"/></svg>
+            <div class="donut-text"><span class="score" style="color:${dc}">${s.donut.score}</span><span class="unit">${s.donut.unitLabel}</span></div>
+          </div>
+        </div>
+        ${s.badge ? `<div class="animate-in delay-2"><div class="badge ${s.badge.style}">${s.badge.text}</div></div>` : ''}
+      </div>
+      <div class="col"><div class="animate-in delay-2">${barsHtml}</div></div>
+    </div>
+  </div>`;
+};
+
+R['horizontal-bars'] = (s, i) => {
+  const barsHtml = s.bars.map(b => {
+    const bg = b.highlight ? 'background:rgba(6,182,212,0.3);color:#67e8f9' : 'background:rgba(51,65,85,0.5);color:#94a3b8';
+    const labelColor = b.highlight ? `color:var(--primary)` : '';
+    return `<div class="lift-row"><div class="lift-label" style="${labelColor}">${b.label}</div><div class="lift-bar-wrap"><div class="lift-bar" data-width="${b.pct}" style="${bg}">${b.value}</div></div></div>`;
+  }).join('');
+  return `
+  <div class="slide${i===0?' active':''}" data-slide="${i}" data-note="${esc(s.note)}">
+    <div class="animate-in"><div class="section-label">${s.label}</div></div>
+    <div class="animate-in delay-1"><p style="font-size:28px;font-weight:700;text-align:center">${s.headline}</p></div>
+    <div class="lift-bars animate-in delay-2" id="hbars-${i}">${barsHtml}</div>
+    ${s.caption ? `<div class="animate-in delay-3"><p class="caption" style="margin-top:20px">${s.caption}</p></div>` : ''}
+  </div>`;
+};
+
+R['action-list'] = (s, i) => {
+  const actionsHtml = s.actions.map((a, j) =>
+    `<div class="action-item"><div class="action-num">${j+1}</div><div class="action-text">${a}</div></div>`
+  ).join('');
+  return `
+  <div class="slide${i===0?' active':''}" data-slide="${i}" data-note="${esc(s.note)}">
+    <div class="animate-in"><div class="section-label">${s.label}</div></div>
+    <div class="animate-in delay-1" style="text-align:center">
+      ${s.badge ? `<div class="badge ${s.badge.style}">${s.badge.text}</div>` : ''}
+      ${s.badgeCaption ? `<p style="font-size:14px;color:var(--text3);margin-top:8px">${s.badgeCaption}</p>` : ''}
+    </div>
+    <div class="actions animate-in delay-2">${actionsHtml}</div>
+  </div>`;
+};
+
+R['impact-cards'] = (s, i) => {
+  const cardsHtml = s.cards.map(c => {
+    const vc = themeColor(c.style);
+    const labelColors = { danger: '#fca5a5', warning: '#fcd34d', success: '#6ee7b7' };
+    const topColor = labelColors[c.style] || '#94a3b8';
+    return `<div class="impact-card ${c.style}">
+      <p style="font-size:12px;color:${topColor};margin-bottom:8px">${c.topLabel}</p>
+      <p style="font-size:40px;font-weight:900;color:${vc}">${c.value}</p>
+      <p style="font-size:11px;color:var(--text3);margin-top:4px">${c.bottomLabel}</p>
+    </div>`;
+  }).join('');
+  return `
+  <div class="slide${i===0?' active':''}" data-slide="${i}" data-note="${esc(s.note)}">
+    <div class="animate-in"><div class="section-label">${s.label}</div></div>
+    <div class="animate-in delay-1"><div class="impact-row">${cardsHtml}</div></div>
+    ${s.caption ? `<div class="animate-in delay-2"><p class="caption" style="margin-top:24px">${s.caption}</p></div>` : ''}
+  </div>`;
+};
+
+R['comparison-table'] = (s, i) => {
+  const thHtml = s.columns.map(c =>
+    `<th style="padding:12px 16px;${c.align==='left'?'text-align:left;':''}font-size:12px;color:${themeColor(c.color)};text-transform:uppercase;letter-spacing:0.1em">${c.header}</th>`
+  ).join('');
+  const tbHtml = s.rows.map(r =>
+    `<tr style="border-bottom:1px solid #0f172a">${s.columns.map(c =>
+      `<td style="padding:14px 16px;${c.align==='left'?'text-align:left;color:var(--text2);font-weight:500':'color:'+themeColor(c.color)+';font-weight:700'}">${r[c.key]}</td>`
+    ).join('')}</tr>`
+  ).join('');
+  return `
+  <div class="slide${i===0?' active':''}" data-slide="${i}" data-note="${esc(s.note)}">
+    <div class="animate-in"><div class="section-label">${s.label}</div></div>
+    <div class="animate-in delay-1">
+      <table style="border-collapse:collapse;max-width:800px;width:100%;text-align:center">
+        <thead><tr style="border-bottom:1px solid #1e293b">${thHtml}</tr></thead>
+        <tbody>${tbHtml}</tbody>
+      </table>
+    </div>
+  </div>`;
+};
+
+R['card-grid'] = (s, i) => {
+  const gridsHtml = s.grids.map((g, gi) => {
+    const cardsHtml = g.cards.map(c =>
+      `<div class="card"><div class="card-icon">${c.icon}</div><div class="card-title">${c.title}</div><div class="card-desc">${c.desc}</div></div>`
+    ).join('');
+    return `<div class="animate-in delay-${gi+2}"><div class="cards" style="grid-template-columns:repeat(${g.columns},1fr);max-width:${g.columns*250}px${gi>0?';margin-top:16px':''}">${cardsHtml}</div></div>`;
+  }).join('');
+  return `
+  <div class="slide${i===0?' active':''}" data-slide="${i}" data-note="${esc(s.note)}">
+    <div class="animate-in"><div class="section-label">${s.label}</div></div>
+    <div class="animate-in delay-1"><p style="font-size:28px;font-weight:700;text-align:center">${s.headline}</p></div>
+    ${gridsHtml}
+  </div>`;
+};
+
+R['cta'] = (s, i) => {
+  const linesHtml = (s.titleLines || []).map((l, j) =>
+    `<div class="animate-in${j>0?' delay-'+j:''}"><div class="title" style="font-size:56px">${l}</div></div>`
+  ).join('');
+  const btnsHtml = (s.buttons || []).map(b => {
+    if (b.style === 'primary') {
+      return `<a href="${b.url}" target="_blank" style="display:inline-block;background:var(--primary);color:white;font-weight:700;font-size:18px;padding:16px 40px;border-radius:16px;text-decoration:none;box-shadow:0 0 40px rgba(6,182,212,0.4)">${b.text}</a>`;
+    }
+    return `<a href="${b.url}" target="_blank" style="display:inline-block;background:transparent;color:var(--text2);font-weight:600;font-size:16px;padding:14px 32px;border-radius:16px;text-decoration:none;border:1px solid #334155">${b.text}</a>`;
+  }).join('');
+  const meta = DEMO_CONFIG.meta;
+  return `
+  <div class="slide${i===0?' active':''}" data-slide="${i}" data-note="${esc(s.note)}">
+    ${linesHtml}
+    <div class="animate-in delay-2" style="margin-top:40px;display:flex;gap:20px;align-items:center;justify-content:center">${btnsHtml}</div>
+    ${meta.techStack ? `<div class="animate-in delay-3"><p class="caption" style="margin-top:30px">${meta.techStack}</p></div>` : ''}
+  </div>`;
+};
+
+function esc(str) {
+  return (str || '').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// =====================================================================
+// INIT: build slides from config, apply theme, wire navigation
+// =====================================================================
+function initPresentation() {
+  const cfg = DEMO_CONFIG;
+  const t = cfg.theme;
+
+  // Apply theme as CSS variables
+  document.title = cfg.meta.title + ' — ' + cfg.meta.subtitle;
+  const root = document.documentElement;
+  root.style.setProperty('--primary',   t.primary);
+  root.style.setProperty('--secondary', t.secondary);
+  root.style.setProperty('--accent',    t.accent);
+  root.style.setProperty('--danger',    t.danger);
+  root.style.setProperty('--warning',   t.warning);
+  root.style.setProperty('--success',   t.success);
+  root.style.setProperty('--bg',        t.bg);
+  root.style.setProperty('--surface',   t.surface);
+  root.style.setProperty('--border',    t.border);
+  root.style.setProperty('--text1',     t.textPrimary);
+  root.style.setProperty('--text2',     t.textSecondary);
+  root.style.setProperty('--text3',     t.textMuted);
+  root.style.setProperty('--title-gradient', t.titleGradient);
+  document.body.style.background = t.bg;
+
+  // Orb colors
+  if (t.orbs) {
+    document.getElementById('orb1').style.background = t.orbs[0] || t.primary;
+    document.getElementById('orb2').style.background = t.orbs[1] || t.accent;
+    document.getElementById('orb3').style.background = t.orbs[2] || t.danger;
+  }
+
+  // Update grid lines to use primary color
+  document.querySelector('.grid-bg').style.backgroundImage =
+    `linear-gradient(${t.primary}4D 1px, transparent 1px), linear-gradient(90deg, ${t.primary}4D 1px, transparent 1px)`;
+
+  // Render slides
+  const container = document.getElementById('slideContainer');
+  container.innerHTML = cfg.slides.map((s, i) => {
+    const renderer = R[s.type];
+    if (!renderer) return `<div class="slide${i===0?' active':''}" data-slide="${i}" data-note=""><p style="color:var(--danger)">Unknown slide type: ${s.type}</p></div>`;
+    return renderer(s, i);
+  }).join('');
+
+  // Init navigation
+  initNav();
+}
+
+// =====================================================================
+// NAVIGATION + TELEPROMPTER + RECORD MODE
+// =====================================================================
+function initNav() {
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let current = 0;
+
+  const notesPanel    = document.getElementById('notesPanel');
+  const notesText     = document.getElementById('notesText');
+  const notesScroll   = document.getElementById('notesScroll');
+  const notesTimer    = document.getElementById('notesTimer');
+  const slideIndicator= document.getElementById('slideIndicator');
+  let notesVisible = false;
+  let timerStart = Date.now();
+  let timerInterval = null;
+
+  // Auto-scroll
+  let tpAutoScroll = false;
+  let tpScrollInterval = null;
+  let tpSpeed = 2;
+
+  // Record mode
+  let recording = false;
+  let recordTimeouts = [];
+  let recTimerInterval = null;
+  let recStart = 0;
+
+  // Expose globally for inline onclick handlers
+  window.toggleAutoScroll = function() {
+    tpAutoScroll = !tpAutoScroll;
+    document.getElementById('tpAutoBtn').classList.toggle('active', tpAutoScroll);
+    if (tpAutoScroll) startAutoScroll(); else stopAutoScroll();
+  };
+  window.adjustSpeed = function(delta) {
+    tpSpeed = Math.max(1, Math.min(5, tpSpeed + delta));
+    document.getElementById('speedValue').textContent = tpSpeed;
+    if (tpAutoScroll) startAutoScroll();
+  };
+
+  function startAutoScroll() { stopAutoScroll(); tpScrollInterval = setInterval(() => { notesScroll.scrollTop += tpSpeed; }, 50); }
+  function stopAutoScroll() { if (tpScrollInterval) { clearInterval(tpScrollInterval); tpScrollInterval = null; } }
+
+  document.getElementById('counter').textContent = '1 / ' + total;
+  document.getElementById('progress').style.width = (1/total*100) + '%';
+
+  function updateTimer() {
+    const elapsed = Math.floor((Date.now() - timerStart) / 1000);
+    const min = Math.floor(elapsed / 60);
+    const sec = elapsed % 60;
+    notesTimer.textContent = min + ':' + (sec < 10 ? '0' : '') + sec;
+  }
+
+  function toggleNotes() {
+    notesVisible = !notesVisible;
+    notesPanel.classList.toggle('visible', notesVisible);
+    document.body.classList.toggle('notes-open', notesVisible);
+    if (notesVisible && !timerInterval) {
+      timerStart = Date.now();
+      timerInterval = setInterval(updateTimer, 1000);
+    }
+    updateNotes();
+  }
+
+  function updateNotes() {
+    const note = slides[current].getAttribute('data-note') || 'No notes for this slide.';
+    notesText.textContent = note;
+    slideIndicator.innerHTML = 'Slide <span>' + (current + 1) + '</span> of ' + total;
+    notesScroll.scrollTop = 0;
+    if (tpAutoScroll) { stopAutoScroll(); setTimeout(startAutoScroll, 800); }
+  }
+
+  function goTo(idx) {
+    if (idx < 0 || idx >= total) return;
+    slides[current].classList.remove('active');
+    slides[current].classList.add('exit');
+    const prevIdx = current;
+    current = idx;
+    slides[current].classList.add('active');
+    setTimeout(() => slides[prevIdx].classList.remove('exit'), 800);
+    document.getElementById('progress').style.width = ((current+1)/total*100) + '%';
+    document.getElementById('counter').textContent = (current+1) + ' / ' + total;
+    updateNotes();
+    triggerAnimations(current);
+  }
+
+  function next() { goTo(current + 1); }
+  function prev() { goTo(current - 1); }
+
+  // Slide-specific animations
+  function triggerAnimations(idx) {
+    const s = DEMO_CONFIG.slides[idx];
+
+    // Pipeline light-up
+    if (s.type === 'pipeline') {
+      const steps = s.steps.length;
+      for (let j = 0; j < steps; j++) {
+        setTimeout(() => {
+          const el = document.getElementById('ps-' + idx + '-' + j);
+          if (el) el.classList.add('lit');
+          if (j > 0) { const arr = document.getElementById('pa-' + idx + '-' + (j-1)); if (arr) arr.classList.add('lit'); }
+        }, j * 400);
+      }
+    }
+
+    // Funnel bars
+    if (s.type === 'funnel') {
+      setTimeout(() => {
+        document.querySelectorAll('#funnel-' + idx + ' .funnel-bar').forEach(bar => { bar.style.width = bar.dataset.width + '%'; });
+      }, 300);
+    }
+
+    // Donut fill
+    if (s.type === 'donut-bars') {
+      setTimeout(() => {
+        const circ = 2 * Math.PI * 90;
+        const fill = document.getElementById('donut-fill-' + idx);
+        if (fill) fill.style.strokeDashoffset = circ * (1 - s.donut.score / s.donut.max);
+      }, 300);
+    }
+
+    // Horizontal bars
+    if (s.type === 'horizontal-bars') {
+      setTimeout(() => {
+        document.querySelectorAll('#hbars-' + idx + ' .lift-bar').forEach(bar => { bar.style.width = bar.dataset.width + '%'; });
+      }, 300);
+    }
+  }
+
+  // Keyboard
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') { e.preventDefault(); next(); }
+    if (e.key === 'ArrowLeft' || e.key === 'Backspace') { e.preventDefault(); prev(); }
+    if (e.key === 'n' || e.key === 'N') { e.preventDefault(); toggleNotes(); }
+    if (notesVisible && e.key === 'ArrowUp') { e.preventDefault(); notesScroll.scrollTop -= 40; }
+    if (notesVisible && e.key === 'ArrowDown') { e.preventDefault(); notesScroll.scrollTop += 40; }
+    if (e.key === 'r' || e.key === 'R') { e.preventDefault(); recording ? stopRecording() : startRecordMode(); }
+    if (e.key === 'Escape' && recording) { e.preventDefault(); stopRecording(); }
+  });
+
+  // Auto-play (press A)
+  let autoPlay = null;
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'a' || e.key === 'A') {
+      if (autoPlay) { clearInterval(autoPlay); autoPlay = null; }
+      else { autoPlay = setInterval(next, 4000); }
+    }
+  });
+
+  // Touch
+  let touchStartX = 0;
+  document.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
+  document.addEventListener('touchend', (e) => {
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) { diff > 0 ? next() : prev(); }
+  });
+
+  // Click to advance
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('a') || e.target.closest('.notes-panel') || e.target.closest('.tp-controls') || e.target.closest('.config-selector')) return;
+    const mainWidth = notesVisible ? window.innerWidth - 340 : window.innerWidth;
+    if (e.clientX > mainWidth) return;
+    if (e.clientX > mainWidth * 0.5) next(); else prev();
+  });
+
+  // Record mode
+  function startRecordMode() {
+    if (recording) return;
+    goTo(0);
+    const overlay = document.getElementById('recordOverlay');
+    const countdownNum = document.getElementById('countdownNum');
+    overlay.classList.add('visible');
+    let count = 3;
+    countdownNum.textContent = count;
+    const countInterval = setInterval(() => {
+      count--;
+      if (count > 0) countdownNum.textContent = count;
+      else { clearInterval(countInterval); overlay.classList.remove('visible'); beginRecording(); }
+    }, 1000);
+    const cancelHandler = (e) => {
+      if (e.key === 'Escape') { clearInterval(countInterval); overlay.classList.remove('visible'); document.removeEventListener('keydown', cancelHandler); }
+    };
+    document.addEventListener('keydown', cancelHandler);
+  }
+
+  function beginRecording() {
+    recording = true;
+    document.getElementById('recIndicator').classList.add('active');
+    recStart = Date.now();
+    recTimerInterval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - recStart) / 1000);
+      const min = Math.floor(elapsed / 60);
+      const sec = elapsed % 60;
+      document.getElementById('recTime').textContent = min + ':' + (sec < 10 ? '0' : '') + sec;
+    }, 1000);
+    if (!notesVisible) toggleNotes();
+    if (!tpAutoScroll) window.toggleAutoScroll();
+    timerStart = Date.now();
+
+    // Schedule slide transitions from config timings
+    let cumTime = 0;
+    recordTimeouts = [];
+    const timings = DEMO_CONFIG.slides.map(s => s.timing || 15);
+    for (let j = 0; j < timings.length - 1; j++) {
+      cumTime += timings[j] * 1000;
+      const slideIdx = j + 1;
+      recordTimeouts.push(setTimeout(() => goTo(slideIdx), cumTime));
+    }
+    cumTime += timings[timings.length - 1] * 1000;
+    recordTimeouts.push(setTimeout(stopRecording, cumTime));
+  }
+
+  function stopRecording() {
+    recording = false;
+    recordTimeouts.forEach(t => clearTimeout(t));
+    recordTimeouts = [];
+    document.getElementById('recIndicator').classList.remove('active');
+    if (recTimerInterval) { clearInterval(recTimerInterval); recTimerInterval = null; }
+    if (tpAutoScroll) window.toggleAutoScroll();
+  }
+
+  // Trigger animations for first slide
+  updateNotes();
+  triggerAnimations(0);
+}
+</script>
+</body>
+</html>
