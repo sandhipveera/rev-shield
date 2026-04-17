@@ -612,13 +612,29 @@
       <div class="step-num">3</div>
       <div class="step-content">
         <strong>If you have an Apify token, run a live scrape</strong>
-        <p>Enter the token, paste a URL, and click Run Scrape. Results appear in the Competitive Intelligence section below.</p>
+        <p>Enter the token, select <strong>Competitor Pricing</strong>, and paste these URLs (pre-filled in placeholders):</p>
+        <p style="font-family:monospace;font-size:12px;color:#94a3b8;margin-top:8px">
+          https://www.anker.com/products/a2568-maggo-qi2-wireless-charging-pad<br>
+          https://bellroy.com/products/slim-sleeve-wallet<br>
+          https://grovemade.com/product/wood-laptop-stand/
+        </p>
+        <p style="margin-top:8px">These are direct competitors to Nova Pulse's Wireless Charging Pad ($39), Minimalist Wallet ($34), and Laptop Stand ($79).</p>
       </div>
     </div>
   </div>
 
+  <h3>Pre-loaded competitor URLs by mode</h3>
+  <table>
+    <thead><tr><th>Mode</th><th>Pre-filled URLs</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Competitor Pricing</strong></td><td style="font-size:12px;font-family:monospace">anker.com (charging pad), bellroy.com (wallet), grovemade.com (laptop stand)</td></tr>
+      <tr><td><strong>Landing Page Health</strong></td><td style="font-size:12px;font-family:monospace">nova-pulse-14.myshopify.com (home, collections, product page)</td></tr>
+      <tr><td><strong>Review Sentiment</strong></td><td style="font-size:12px;font-family:monospace">trustpilot.com/review/anker.com, bellroy.com, nomadgoods.com</td></tr>
+    </tbody>
+  </table>
+
   <div class="callout tip">
-    <strong>If no Apify token:</strong> Just show the UI and explain: "In production, this feeds competitor pricing data into the funnel analysis. If a competitor drops prices and your conversion dips, RevShield correlates the two."
+    <strong>If no Apify token:</strong> Just show the UI and explain: "In production, this feeds competitor pricing data into the funnel analysis. If Anker drops their charging pad to $25 and your conversion dips, RevShield correlates the two and alerts you."
   </div>
 </div>
 

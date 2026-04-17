@@ -746,10 +746,10 @@ function ApifyTab({ onApifyResults, setLoading, setError, setSuccess, loading }:
       />
       <textarea
         placeholder={mode === "competitor-pricing"
-          ? "https://competitor.com/product-1\nhttps://competitor.com/product-2"
+          ? "https://www.anker.com/products/a2568-maggo-qi2-wireless-charging-pad\nhttps://bellroy.com/products/slim-sleeve-wallet\nhttps://grovemade.com/product/wood-laptop-stand/"
           : mode === "landing-page-health"
-          ? "https://yoursite.com/landing-1\nhttps://yoursite.com/landing-2"
-          : "https://trustpilot.com/review/yourcompany\nhttps://g2.com/products/yourproduct"
+          ? "https://nova-pulse-14.myshopify.com\nhttps://nova-pulse-14.myshopify.com/collections/all\nhttps://nova-pulse-14.myshopify.com/products/wireless-charging-pad"
+          : "https://www.trustpilot.com/review/anker.com\nhttps://www.trustpilot.com/review/bellroy.com\nhttps://www.trustpilot.com/review/nomadgoods.com"
         }
         value={urlsText}
         onChange={(e) => setUrlsText(e.target.value)}
