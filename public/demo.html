@@ -566,6 +566,68 @@
   }
   .notes-panel .slide-indicator span { color: #06b6d4; }
 
+  /* Record mode overlay */
+  .record-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 500;
+    background: rgba(0,0,0,0.92);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s;
+  }
+  .record-overlay.visible { opacity: 1; pointer-events: all; }
+  .record-overlay .countdown {
+    font-size: 140px;
+    font-weight: 900;
+    color: #06b6d4;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 60px rgba(6,182,212,0.5);
+  }
+  .record-overlay .countdown-label {
+    font-size: 18px;
+    color: #64748b;
+    margin-top: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+  }
+
+  /* Recording indicator */
+  .rec-indicator {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 300;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    background: rgba(239,68,68,0.15);
+    border: 1px solid rgba(239,68,68,0.4);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fca5a5;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .rec-indicator.active { display: flex; }
+  .rec-dot {
+    width: 10px;
+    height: 10px;
+    background: #ef4444;
+    border-radius: 50%;
+    animation: recPulse 1s ease-in-out infinite;
+  }
+  @keyframes recPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+
   /* Animate elements within active slides */
   .slide.active .animate-in {
     animation: fadeInUp 0.6s ease forwards;
@@ -618,10 +680,24 @@
   </div>
 </div>
 
+<!-- Record mode countdown overlay -->
+<div class="record-overlay" id="recordOverlay">
+  <div class="countdown" id="countdownNum">3</div>
+  <div class="countdown-label">Recording starts in...</div>
+  <div style="margin-top:40px;font-size:13px;color:#475569">Press <span style="color:#94a3b8">Esc</span> to cancel</div>
+</div>
+
+<!-- Recording indicator -->
+<div class="rec-indicator" id="recIndicator">
+  <div class="rec-dot"></div>
+  <span>REC</span>
+  <span id="recTime" style="color:#ef4444;margin-left:4px;font-variant-numeric:tabular-nums">0:00</span>
+</div>
+
 <!-- Progress -->
 <div class="progress-wrap"><div class="progress-bar" id="progress"></div></div>
 <div class="slide-counter" id="counter">1 / 12</div>
-<div class="nav-hint">Space / Arrow keys &middot; N = teleprompter &middot; A = auto-play</div>
+<div class="nav-hint">Space / Arrow keys &middot; N = teleprompter &middot; R = record mode &middot; A = auto-play</div>
 
 <!-- ===== SLIDE 1: Title ===== -->
 <div class="slide active" data-slide="0" data-note="This is RevShield — an autonomous GTM revenue agent. Every dollar your GTM team spends on ads, campaigns, and outbound is wasted if the funnel is leaking. RevShield autonomously monitors your funnel 24/7, diagnoses why campaigns are underperforming, and takes corrective action — before your CAC goes through the roof.">
@@ -1209,6 +1285,135 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'a') {
     if (autoPlay) { clearInterval(autoPlay); autoPlay = null; }
     else { autoPlay = setInterval(next, 4000); }
+  }
+});
+
+// =====================================================================
+// RECORD MODE — press R to start scripted auto-play with countdown
+// Timings match the voiceover script (seconds per slide)
+// =====================================================================
+const SLIDE_TIMINGS = [
+  15,  // Slide 1: Title (0:00–0:15)
+  20,  // Slide 2: The Problem (0:15–0:35)
+  30,  // Slide 3: Pipeline (0:35–1:05)
+  15,  // Slide 4: Data Sources (1:05–1:20)
+  20,  // Slide 5: Funnel Detection (1:20–1:40)
+  20,  // Slide 6: RRAF Score (1:40–2:00)
+  20,  // Slide 7: LIFT Diagnosis (2:00–2:20)
+  20,  // Slide 8: Remediation (2:20–2:40)
+  20,  // Slide 9: Impact (2:40–3:00)
+  15,  // Slide 10: Before/After (3:00–3:15)
+  15,  // Slide 11: Drill-Downs (3:15–3:30)
+  20,  // Slide 12: CTA / Closing (3:30–3:50)
+];
+
+let recording = false;
+let recordTimeouts = [];
+let recTimerInterval = null;
+let recStart = 0;
+
+function startRecordMode() {
+  if (recording) return;
+
+  // Reset to slide 1
+  goTo(0);
+
+  // Show countdown overlay
+  const overlay = document.getElementById('recordOverlay');
+  const countdownNum = document.getElementById('countdownNum');
+  overlay.classList.add('visible');
+
+  let count = 3;
+  countdownNum.textContent = count;
+
+  const countInterval = setInterval(() => {
+    count--;
+    if (count > 0) {
+      countdownNum.textContent = count;
+    } else {
+      clearInterval(countInterval);
+      overlay.classList.remove('visible');
+      beginRecording();
+    }
+  }, 1000);
+
+  // Allow cancel with Escape
+  const cancelHandler = (e) => {
+    if (e.key === 'Escape') {
+      clearInterval(countInterval);
+      overlay.classList.remove('visible');
+      document.removeEventListener('keydown', cancelHandler);
+    }
+  };
+  document.addEventListener('keydown', cancelHandler);
+}
+
+function beginRecording() {
+  recording = true;
+
+  // Show recording indicator
+  document.getElementById('recIndicator').classList.add('active');
+  recStart = Date.now();
+  recTimerInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - recStart) / 1000);
+    const min = Math.floor(elapsed / 60);
+    const sec = elapsed % 60;
+    document.getElementById('recTime').textContent = min + ':' + (sec < 10 ? '0' : '') + sec;
+  }, 1000);
+
+  // Open teleprompter with auto-scroll
+  if (!notesVisible) toggleNotes();
+  if (!tpAutoScroll) toggleAutoScroll();
+
+  // Reset timer
+  timerStart = Date.now();
+
+  // Schedule all slide transitions
+  let cumulativeTime = 0;
+  recordTimeouts = [];
+
+  for (let i = 0; i < SLIDE_TIMINGS.length - 1; i++) {
+    cumulativeTime += SLIDE_TIMINGS[i] * 1000;
+    const slideIdx = i + 1;
+    const t = setTimeout(() => {
+      goTo(slideIdx);
+    }, cumulativeTime);
+    recordTimeouts.push(t);
+  }
+
+  // End recording after all slides
+  cumulativeTime += SLIDE_TIMINGS[SLIDE_TIMINGS.length - 1] * 1000;
+  const endTimeout = setTimeout(() => {
+    stopRecording();
+  }, cumulativeTime);
+  recordTimeouts.push(endTimeout);
+}
+
+function stopRecording() {
+  recording = false;
+  recordTimeouts.forEach(t => clearTimeout(t));
+  recordTimeouts = [];
+
+  document.getElementById('recIndicator').classList.remove('active');
+  if (recTimerInterval) {
+    clearInterval(recTimerInterval);
+    recTimerInterval = null;
+  }
+
+  // Stop auto-scroll
+  if (tpAutoScroll) toggleAutoScroll();
+}
+
+// R to start/stop record mode, Escape to stop
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'r' || e.key === 'R') {
+    e.preventDefault();
+    if (recording) stopRecording();
+    else startRecordMode();
+  }
+  if (e.key === 'Escape' && recording) {
+    e.preventDefault();
+    stopRecording();
   }
 });
 
