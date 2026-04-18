@@ -703,7 +703,7 @@ function ApifyTab({ onApifyResults, setLoading, setError, setSuccess, loading }:
     if (urls.length === 0) {
       // Auto-populate with the placeholder URLs if empty
       const defaultUrls = mode === "competitor-pricing"
-        ? ["https://grovemade.com/product/wood-laptop-stand/", "https://grovemade.com/product/wood-monitor-stand/", "https://grovemade.com/product/wool-desk-pad/"]
+        ? ["https://grovemade.com/product/wood-laptop-stand/", "https://grovemade.com/product/wood-monitor-stand/", "https://www.allbirds.com/products/mens-tree-runners"]
         : mode === "landing-page-health"
         ? ["https://nova-pulse-14.myshopify.com", "https://nova-pulse-14.myshopify.com/collections/all", "https://nova-pulse-14.myshopify.com/products/wireless-charging-pad"]
         : ["https://www.trustpilot.com/review/anker.com", "https://www.trustpilot.com/review/bellroy.com"];
@@ -769,7 +769,7 @@ function ApifyTab({ onApifyResults, setLoading, setError, setSuccess, loading }:
       />
       <textarea
         placeholder={mode === "competitor-pricing"
-          ? "https://grovemade.com/product/wood-laptop-stand/\nhttps://grovemade.com/product/wood-monitor-stand/\nhttps://grovemade.com/product/wool-desk-pad/"
+          ? "https://grovemade.com/product/wood-laptop-stand/\nhttps://grovemade.com/product/wood-monitor-stand/\nhttps://www.allbirds.com/products/mens-tree-runners"
           : mode === "landing-page-health"
           ? "https://nova-pulse-14.myshopify.com\nhttps://nova-pulse-14.myshopify.com/collections/all\nhttps://nova-pulse-14.myshopify.com/products/wireless-charging-pad"
           : "https://www.trustpilot.com/review/anker.com\nhttps://www.trustpilot.com/review/bellroy.com\nhttps://www.trustpilot.com/review/nomadgoods.com"
