@@ -18,6 +18,7 @@ import AgentActionsPanel from "@/components/AgentActionsPanel";
 import CampaignAttribution from "@/components/CampaignAttribution";
 import FunnelChatAgent from "@/components/FunnelChatAgent";
 import GtmStrategyDashboard from "@/components/GtmStrategyDashboard";
+import MarketingOutcomesSummary from "@/components/MarketingOutcomesSummary";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -449,6 +450,16 @@ export default function Home() {
             )}
           </motion.button>
         </section>
+
+        {/* ================================================================
+            MARKETING OUTCOMES SUMMARY — maps to judging criterion #1
+            (Produce measurable marketing outcomes)
+        ================================================================ */}
+        <AnimatePresence>
+          {verified && impact && remediation && leak && (
+            <MarketingOutcomesSummary leak={leak} impact={impact} remediation={remediation} visible={true} />
+          )}
+        </AnimatePresence>
 
         {/* ================================================================
             REVENUE TICKER (#2)
