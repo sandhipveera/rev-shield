@@ -38,7 +38,7 @@ interface ReviewSentiment {
   platform: string;
   avgRating: number;
   totalReviews: number;
-  recentNegative: string[];
+  recentNegative: string[];  // legacy field kept for UI compatibility
   scrapedAt: string;
 }
 
@@ -88,11 +88,52 @@ async function scrapeCompetitorPricing(token: string, urls: string[]): Promise<N
     pageFunction: `async function pageFunction(context) {
       const { $, request } = context;
       const title = $('title').text().trim() || $('h1').first().text().trim() || 'Unknown';
-      const priceEl = $('[class*="price"], [data-price], .price, #price, [itemprop="price"]').first();
-      const price = priceEl.attr('content') || priceEl.text().replace(/[^0-9.,]/g, '').trim() || 'N/A';
-      const currency = $('[itemprop="priceCurrency"]').attr('content') || 'USD';
-      const avail = $('[itemprop="availability"]').attr('content') ||
-                    ($('.in-stock, [class*="in-stock"], [class*="available"]').length ? 'InStock' : 'Unknown');
+
+      // --- Try JSON-LD first (modern ecommerce sites embed structured data) ---
+      let price = 'N/A', currency = 'USD', avail = 'Unknown';
+      const ldScripts = $('script[type="application/ld+json"]').toArray();
+      for (const s of ldScripts) {
+        try {
+          const text = $(s).contents().text();
+          if (!text) continue;
+          const data = JSON.parse(text);
+          const items = Array.isArray(data) ? data : (data['@graph'] || [data]);
+          for (const item of items) {
+            const offers = item.offers;
+            const offer = Array.isArray(offers) ? offers[0] : offers;
+            if (offer) {
+              price = String(offer.price || offer.lowPrice || offer.priceSpecification?.price || price);
+              currency = offer.priceCurrency || offer.priceSpecification?.priceCurrency || currency;
+              avail = (offer.availability || '').toString().replace('https://schema.org/', '') || avail;
+              if (price !== 'N/A') break;
+            }
+          }
+          if (price !== 'N/A') break;
+        } catch (e) {}
+      }
+
+      // --- Fallback: meta tags ---
+      if (price === 'N/A') {
+        price = $('meta[property="product:price:amount"], meta[property="og:price:amount"], meta[name="twitter:data1"]').attr('content') || 'N/A';
+        if (price === 'N/A') {
+          const metaCurr = $('meta[property="product:price:currency"], meta[property="og:price:currency"]').attr('content');
+          if (metaCurr) currency = metaCurr;
+        }
+      }
+
+      // --- Last resort: DOM selectors ---
+      if (price === 'N/A') {
+        const priceEl = $('[itemprop="price"], [data-product-price], [data-price], .product-price, .price, .money').first();
+        const raw = priceEl.attr('content') || priceEl.attr('data-price') || priceEl.text();
+        const m = (raw || '').match(/[0-9]+[.,]?[0-9]*/);
+        if (m) price = m[0].replace(',', '.');
+      }
+
+      // Clean up
+      if (price !== 'N/A') {
+        price = price.toString().replace(/[^0-9.]/g, '');
+      }
+
       return { url: request.url, title, price, currency, availability: avail, scrapedAt: new Date().toISOString() };
     }`,
     maxRequestsPerCrawl: urls.length,
@@ -137,12 +178,24 @@ async function checkLandingPageHealth(token: string, urls: string[]): Promise<Ne
         return href && (href.startsWith('javascript:') || href === '#');
       }).length;
       const hasSSL = request.url.startsWith('https');
+      // pageFunction only runs on successful loads, so default to 200 if statusCode missing
+      const status = (response && response.statusCode) || 200;
+      // Extract meta description for content quality signal
+      const metaDesc = $('meta[name="description"]').attr('content') || '';
+      const hasDesc = metaDesc.length > 20;
+      // Image count & favicon presence
+      const imgCount = $('img').length;
+      const hasFavicon = $('link[rel*="icon"]').length > 0;
       return {
         url: request.url,
-        status: response.statusCode,
+        status,
         title,
         hasSSL,
         brokenLinks,
+        hasDesc,
+        imgCount,
+        hasFavicon,
+        metaDesc: metaDesc.slice(0, 120),
         scrapedAt: new Date().toISOString(),
       };
     }`,
@@ -156,7 +209,7 @@ async function checkLandingPageHealth(token: string, urls: string[]): Promise<Ne
 
   const health: LandingPageHealth[] = results.map((r: any) => ({
     url: r.url || "",
-    status: r.status || 0,
+    status: r.status || 200, // pageFunction only runs on successful loads
     loadTimeMs: Math.round(elapsed / Math.max(1, results.length)),
     title: r.title || "Unknown",
     hasSSL: r.hasSSL ?? false,
@@ -192,19 +245,64 @@ async function scrapeReviewSentiment(token: string, urls: string[]): Promise<Nex
     startUrls: urls.map((url) => ({ url })),
     pageFunction: `async function pageFunction(context) {
       const { $, request } = context;
-      const ratingEl = $('[itemprop="ratingValue"], .rating-value, [class*="rating"]').first();
-      const rating = parseFloat(ratingEl.attr('content') || ratingEl.text()) || 0;
-      const countEl = $('[itemprop="reviewCount"], .review-count, [class*="review-count"]').first();
-      const count = parseInt(countEl.attr('content') || countEl.text().replace(/[^0-9]/g, '')) || 0;
-      const negReviews = [];
-      $('[class*="review"], .review-body, [itemprop="reviewBody"]').slice(0, 5).each((i, el) => {
-        const text = $(el).text().trim().slice(0, 200);
-        if (text.length > 20) negReviews.push(text);
+
+      // --- Try JSON-LD first ---
+      let rating = 0, count = 0;
+      const ldScripts = $('script[type="application/ld+json"]').toArray();
+      for (const s of ldScripts) {
+        try {
+          const text = $(s).contents().text();
+          if (!text) continue;
+          const data = JSON.parse(text);
+          const items = Array.isArray(data) ? data : (data['@graph'] || [data]);
+          for (const item of items) {
+            const agg = item.aggregateRating;
+            if (agg) {
+              rating = parseFloat(agg.ratingValue) || rating;
+              count = parseInt(agg.reviewCount || agg.ratingCount) || count;
+            }
+          }
+          if (rating > 0) break;
+        } catch (e) {}
+      }
+
+      // --- Fallback: schema.org itemprop ---
+      if (rating === 0) {
+        const r = $('[itemprop="ratingValue"]').first();
+        rating = parseFloat(r.attr('content') || r.text()) || 0;
+        const c = $('[itemprop="reviewCount"], [itemprop="ratingCount"]').first();
+        count = parseInt((c.attr('content') || c.text()).replace(/[^0-9]/g, '')) || count;
+      }
+
+      // --- Trustpilot-specific: parse from page text ---
+      if (rating === 0 && request.url.includes('trustpilot')) {
+        const bodyText = $('body').text();
+        const tpRating = bodyText.match(/TrustScore\\s*([0-9.]+)/i);
+        if (tpRating) rating = parseFloat(tpRating[1]) || 0;
+        const tpCount = bodyText.match(/([0-9,]+)\\s*reviews?/i);
+        if (tpCount) count = parseInt(tpCount[1].replace(/,/g, '')) || 0;
+      }
+
+      // --- Collect review text samples ---
+      const reviewTexts = [];
+      $('[data-service-review-text-typography], [itemprop="reviewBody"], .review-content, [class*="review-body"], article [class*="review"]').slice(0, 8).each((i, el) => {
+        const text = $(el).text().trim().replace(/\\s+/g, ' ').slice(0, 160);
+        if (text.length > 30 && !reviewTexts.includes(text)) reviewTexts.push(text);
       });
+
       const platform = request.url.includes('trustpilot') ? 'Trustpilot' :
-                       request.url.includes('g2') ? 'G2' :
-                       request.url.includes('capterra') ? 'Capterra' : 'Other';
-      return { url: request.url, platform, avgRating: rating, totalReviews: count, recentNegative: negReviews, scrapedAt: new Date().toISOString() };
+                       request.url.includes('g2.com') ? 'G2' :
+                       request.url.includes('capterra') ? 'Capterra' :
+                       request.url.includes('yelp') ? 'Yelp' :
+                       request.url.includes('google') ? 'Google' : 'Other';
+      return {
+        url: request.url,
+        platform,
+        avgRating: rating,
+        totalReviews: count,
+        recentNegative: reviewTexts.slice(0, 3),
+        scrapedAt: new Date().toISOString(),
+      };
     }`,
     maxRequestsPerCrawl: urls.length,
     maxConcurrency: 3,
