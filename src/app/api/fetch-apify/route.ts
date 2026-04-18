@@ -45,10 +45,17 @@ interface ReviewSentiment {
 export async function POST(req: NextRequest) {
   try {
     const body: ApifyRequest = await req.json();
-    const { token, mode, urls } = body;
+    const { mode, urls } = body;
+
+    // Server-side fallback to env var for demo/production use.
+    // The user's token from the request body takes priority if provided.
+    const token = body.token?.trim() || process.env.APIFY_TOKEN;
 
     if (!token) {
-      return NextResponse.json({ error: "Apify API token required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Apify API token required. Provide in request or set APIFY_TOKEN env var." },
+        { status: 400 }
+      );
     }
 
     if (!urls || urls.length === 0) {

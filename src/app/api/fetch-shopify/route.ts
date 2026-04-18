@@ -23,15 +23,20 @@ interface ShopifyOrder {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { shopDomain, accessToken, days = 14 } = body as {
-      shopDomain: string;
-      accessToken: string;
-      days?: number;
-    };
+    const { days = 14 } = body as { days?: number };
+
+    // Server-side fallback to env vars. Request body values take priority.
+    const shopDomain =
+      (body.shopDomain as string | undefined)?.trim() ||
+      process.env.SHOPIFY_SHOP_DOMAIN;
+    const accessToken =
+      (body.accessToken as string | undefined)?.trim() ||
+      process.env.SHOPIFY_ACCESS_TOKEN ||
+      process.env.SHOPIFY_ADMIN_TOKEN;
 
     if (!shopDomain || !accessToken) {
       return Response.json(
-        { error: "shopDomain and accessToken are required. Get your token from Shopify Admin > Settings > Apps > Develop apps." },
+        { error: "shopDomain and accessToken are required. Provide in request or set SHOPIFY_SHOP_DOMAIN and SHOPIFY_ACCESS_TOKEN env vars." },
         { status: 400 }
       );
     }

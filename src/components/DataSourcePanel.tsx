@@ -388,9 +388,9 @@ function ShopifyTab({ onDataReady, setLoading, setError, setSuccess, loading }: 
   const [token, setToken] = useState("");
   const [days, setDays] = useState(14);
 
-  const fetchShopify = async () => {
-    if (!domain.trim() || !token.trim()) {
-      setError("Both shop domain and access token are required");
+  const fetchShopify = async (useServerKeys = false) => {
+    if (!useServerKeys && (!domain.trim() || !token.trim())) {
+      setError("Both shop domain and access token are required (or click 'Use Demo Store')");
       return;
     }
     setLoading(true);
@@ -401,11 +401,17 @@ function ShopifyTab({ onDataReady, setLoading, setError, setSuccess, loading }: 
       const res = await fetch("/api/fetch-shopify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ shopDomain: domain, accessToken: token, days }),
+        // When useServerKeys is true, send empty strings so server falls back to env vars
+        body: JSON.stringify({
+          shopDomain: useServerKeys ? "" : domain,
+          accessToken: useServerKeys ? "" : token,
+          days,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
+      const shopLabel = useServerKeys ? "demo store" : domain;
       onDataReady({
         funnelData: data.funnelData,
         baselines: data.baselines,
@@ -416,7 +422,7 @@ function ShopifyTab({ onDataReady, setLoading, setError, setSuccess, loading }: 
           segments: data.segments,
           dateRange: data.dateRange,
           rowCount: data.rowCount,
-          description: `Shopify store: ${domain} (${data.orderCount} orders)`,
+          description: `Shopify: ${shopLabel} (${data.orderCount} orders)`,
         },
       });
       setSuccess(`Loaded ${data.orderCount} orders across ${data.segments?.length || 0} channels from Shopify`);
@@ -460,9 +466,17 @@ function ShopifyTab({ onDataReady, setLoading, setError, setSuccess, loading }: 
           className="w-16 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white focus:border-cyan-500 focus:outline-none"
         />
         <button
-          onClick={fetchShopify}
+          onClick={() => fetchShopify(true)}
           disabled={loading}
-          className="px-4 py-2 bg-green-600 hover:bg-green-500 disabled:bg-slate-700 rounded-lg text-sm font-medium transition-colors ml-auto"
+          className="px-3 py-2 bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-500/40 disabled:bg-slate-700 rounded-lg text-xs font-medium text-cyan-300 transition-colors ml-auto"
+          title="Skip typing — uses pre-configured demo store via server env vars"
+        >
+          {loading ? "Loading..." : "\u26A1 Use Demo Store"}
+        </button>
+        <button
+          onClick={() => fetchShopify(false)}
+          disabled={loading}
+          className="px-4 py-2 bg-green-600 hover:bg-green-500 disabled:bg-slate-700 rounded-lg text-sm font-medium transition-colors"
         >
           {loading ? "Connecting..." : "Connect Shopify"}
         </button>
@@ -683,10 +697,18 @@ function ApifyTab({ onApifyResults, setLoading, setError, setSuccess, loading }:
     { id: "review-sentiment" as const, label: "Review Sentiment", icon: "⭐", desc: "Scrape ratings from Trustpilot, G2, Capterra" },
   ];
 
-  const runScrape = async () => {
+  const runScrape = async (useServerKeys = false) => {
     const urls = urlsText.split("\n").map((u) => u.trim()).filter(Boolean);
-    if (!token.trim()) { setError("Apify API token required"); return; }
-    if (urls.length === 0) { setError("Enter at least one URL"); return; }
+    if (!useServerKeys && !token.trim()) { setError("Apify API token required (or click 'Use Demo Key')"); return; }
+    if (urls.length === 0) {
+      // Auto-populate with the placeholder URLs if empty
+      const defaultUrls = mode === "competitor-pricing"
+        ? ["https://www.anker.com/products/a2568-maggo-qi2-wireless-charging-pad", "https://bellroy.com/products/slim-sleeve-wallet", "https://grovemade.com/product/wood-laptop-stand/"]
+        : mode === "landing-page-health"
+        ? ["https://nova-pulse-14.myshopify.com", "https://nova-pulse-14.myshopify.com/collections/all", "https://nova-pulse-14.myshopify.com/products/wireless-charging-pad"]
+        : ["https://www.trustpilot.com/review/anker.com", "https://www.trustpilot.com/review/bellroy.com"];
+      urls.push(...defaultUrls);
+    }
 
     setLoading(true);
     setError(null);
@@ -696,7 +718,8 @@ function ApifyTab({ onApifyResults, setLoading, setError, setSuccess, loading }:
       const res = await fetch("/api/fetch-apify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, mode, urls }),
+        // When useServerKeys is true, send empty token so server falls back to env var
+        body: JSON.stringify({ token: useServerKeys ? "" : token, mode, urls }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -756,12 +779,20 @@ function ApifyTab({ onApifyResults, setLoading, setError, setSuccess, loading }:
         rows={3}
         className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none resize-none font-mono"
       />
-      <div className="flex items-center justify-between">
-        <p className="text-[11px] text-slate-600">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[11px] text-slate-600 flex-1">
           One URL per line. Token is sent directly to Apify and not stored.
         </p>
         <button
-          onClick={runScrape}
+          onClick={() => runScrape(true)}
+          disabled={loading}
+          className="px-3 py-2 bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/40 disabled:bg-slate-700 rounded-lg text-xs font-medium text-amber-300 transition-colors"
+          title="Skip typing — uses pre-configured Apify token via server env vars"
+        >
+          {loading ? "Loading..." : "\u26A1 Use Demo Key"}
+        </button>
+        <button
+          onClick={() => runScrape(false)}
           disabled={loading}
           className="px-4 py-2 bg-amber-600 hover:bg-amber-500 disabled:bg-slate-700 rounded-lg text-sm font-medium transition-colors"
         >
