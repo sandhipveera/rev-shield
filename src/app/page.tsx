@@ -17,6 +17,7 @@ import DrillDownModal, { type DrillDownType } from "@/components/DrillDownModal"
 import AgentActionsPanel from "@/components/AgentActionsPanel";
 import CampaignAttribution from "@/components/CampaignAttribution";
 import FunnelChatAgent from "@/components/FunnelChatAgent";
+import GtmStrategyDashboard from "@/components/GtmStrategyDashboard";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -733,6 +734,17 @@ export default function Home() {
           {leaks && leaks.length > 0 && verified && (
             <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-12">
               <CampaignAttribution leak={leak} leaks={leaks} visible={true} />
+            </motion.section>
+          )}
+        </AnimatePresence>
+
+        {/* ================================================================
+            GTM STRATEGY INTELLIGENCE (5 pillars)
+        ================================================================ */}
+        <AnimatePresence>
+          {leaks && leaks.length > 0 && verified && (
+            <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+              <GtmStrategyDashboard leaks={leaks} topIncident={topIncident} apifyIntel={apifyIntel} visible={true} />
             </motion.section>
           )}
         </AnimatePresence>

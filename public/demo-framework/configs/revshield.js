@@ -42,17 +42,17 @@ const DEMO_CONFIG = {
     // ─── Slide 1: Title ───
     {
       type: "title",
-      timing: 15,
-      note: "This is RevShield — an autonomous GTM revenue agent. Every dollar your GTM team spends on ads, campaigns, and outbound is wasted if the funnel is leaking. RevShield autonomously monitors your funnel 24/7, diagnoses why campaigns are underperforming, and takes corrective action — before your CAC goes through the roof.",
+      timing: 18,
+      note: "This is RevShield — an autonomous GTM agent that covers all five pillars of Go-to-Market: target audience, value proposition, pricing, channels, and goal setting. Most GTM tools only help you PLAN. RevShield plans your GTM strategy AND protects it in production — detecting when the real world breaks your plan and self-correcting. It's the only agent that does both.",
       title: "RevShield",
-      subtitle: "Autonomous GTM Revenue Agent",
+      subtitle: "Autonomous GTM Agent — Plan + Protect",
       tags: [
-        { text: "Autonomous Agent", color: "primary" },
-        { text: "GTM Funnel Protection", color: "accent" },
+        { text: "All 5 GTM Pillars", color: "primary" },
+        { text: "Strategy + Execution", color: "accent" },
         { text: "Self-Correcting", color: "warning" },
         { text: "Production Guardrails", color: "primary" },
       ],
-      caption: "An AI agent that autonomously detects revenue leaks in your GTM funnel,<br>diagnoses root causes, and takes corrective action — while you sleep.",
+      caption: "The only GTM agent covering <span class='hl-primary'>target audience, value prop, pricing, channels, and goals</span><br>— then protects your strategy in production while you sleep.",
     },
 
     // ─── Slide 2: The Problem ───
@@ -72,7 +72,28 @@ const DEMO_CONFIG = {
       ],
     },
 
-    // ─── Slide 3: Pipeline ───
+    // ─── Slide 3: GTM 5 Pillars (NEW) ───
+    {
+      type: "card-grid",
+      timing: 22,
+      note: "GTM strategy is defined by five pillars — target audience, value proposition, pricing and packaging, sales channels, and goal setting. Every serious GTM framework comes back to these five. Most agents on the market only cover one or two. RevShield is the only autonomous agent that covers all five — it derives strategy from your real funnel and competitor data, then protects that strategy in production.",
+      label: "Our GTM Coverage — All 5 Pillars",
+      headline: "The 5 Pillars of Go-to-Market",
+      grids: [
+        {
+          columns: 5,
+          cards: [
+            { icon: "\u{1F465}", title: "Target Audience",    desc: "AI-derived personas from segment data with CVR + AOV" },
+            { icon: "\u{1F48E}", title: "Value Proposition",  desc: "Competitor weakness analysis via Apify reviews" },
+            { icon: "\u{1F4B0}", title: "Pricing & Packaging", desc: "Price elasticity + tier recommendations" },
+            { icon: "\u{1F4E1}", title: "Channels",            desc: "ROAS/CAC per channel + budget reallocation" },
+            { icon: "\u{1F3AF}", title: "Goal Setting",        desc: "30/90-day targets with confidence bands + KPIs" },
+          ],
+        },
+      ],
+    },
+
+    // ─── Slide 4: Pipeline ───
     {
       type: "pipeline",
       timing: 30,
@@ -226,42 +247,43 @@ const DEMO_CONFIG = {
       ],
     },
 
-    // ─── Slide 11: Interactive Drill-Downs ───
+    // ─── Slide: Interactive Drill-Downs ───
     {
       type: "card-grid",
-      timing: 15,
-      note: "Everything on the dashboard is clickable. Click the RRAF score and you get a radar chart breakdown. Click LIFT diagnosis for a pie chart with evidence. Click any leak card, remediation step, impact projection, funnel stage, or incident — each opens a detailed drill-down modal with rich visualizations.",
-      label: "Interactive Drill-Downs",
-      headline: "Click Anything for Details",
+      timing: 18,
+      note: "Everything on the dashboard is clickable and the analysis is presented through the GTM strategy lens. You get all five pillars surfaced as a dashboard — personas, value prop, pricing, channels, and goals — derived automatically from your funnel data. Click the RRAF score for a radar chart. Click LIFT diagnosis for evidence. Every signal connects back to one of the five GTM pillars.",
+      label: "Interactive Drill-Downs + GTM Dashboard",
+      headline: "Click Anything — Everything Ties Back to GTM",
       grids: [
         {
           columns: 4,
           cards: [
-            { icon: "\u{1F4CA}", title: "RRAF Score",        desc: "Radar chart + component breakdown with formula" },
-            { icon: "\u{1FA7A}", title: "LIFT Diagnosis",    desc: "Pie chart with hypothesis cards & evidence signals" },
-            { icon: "\u{1F4C9}", title: "Leak Analysis",     desc: "Conversion comparison bars & all-leaks table" },
-            { icon: "\u{1F4C8}", title: "Impact Projection", desc: "3-scenario area chart with confidence interval" },
+            { icon: "\u{1F3AF}", title: "GTM Strategy Intel", desc: "All 5 pillars: personas, value prop, pricing, channels, goals" },
+            { icon: "\u{1F4CA}", title: "RRAF Score",         desc: "Radar chart + component breakdown with formula" },
+            { icon: "\u{1FA7A}", title: "LIFT Diagnosis",     desc: "Pie chart with hypothesis cards & evidence signals" },
+            { icon: "\u{1F4C9}", title: "Leak Analysis",      desc: "Conversion comparison bars & all-leaks table" },
           ],
         },
         {
-          columns: 3,
+          columns: 4,
           cards: [
-            { icon: "\u{1F527}", title: "Remediation",    desc: "Step-by-step action plan with priority" },
-            { icon: "\u{1F4CA}", title: "Funnel Stages",   desc: "Observed vs baseline visual comparison" },
-            { icon: "\u{1F4CB}", title: "Incident History", desc: "Full timeline with status & severity" },
+            { icon: "\u{1F4C8}", title: "Impact Projection", desc: "3-scenario area chart with confidence interval" },
+            { icon: "\u{1F527}", title: "Remediation",       desc: "Step-by-step action plan with priority" },
+            { icon: "\u{1F4CA}", title: "Funnel Stages",     desc: "Observed vs baseline visual comparison" },
+            { icon: "\u{1F4CB}", title: "Incident History",  desc: "Full timeline with status & severity" },
           ],
         },
       ],
     },
 
-    // ─── Slide 12: CTA ───
+    // ─── Slide: CTA ───
     {
       type: "cta",
-      timing: 20,
-      note: "Your GTM team deserves an agent that never sleeps. RevShield autonomously protects every dollar of marketing spend by detecting funnel leaks, diagnosing root causes, and taking action — with guardrails your team can trust. Try the live demo right now. Thank you!",
+      timing: 22,
+      note: "GTM isn't just planning. It's planning plus protection. RevShield is the only autonomous agent that covers all five pillars of GTM — personas, value prop, pricing, channels, and goals — and then protects that strategy in production with self-healing guardrails. Try the live demo. Thank you.",
       titleLines: [
-        "Your GTM Deserves",
-        "An Agent That Never Sleeps.",
+        "GTM = Plan + Protect.",
+        "One Agent. All 5 Pillars.",
       ],
       buttons: [
         { text: "Try Live Demo \u2192", url: "https://rev-shield.vercel.app", style: "primary" },
