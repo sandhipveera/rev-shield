@@ -36,7 +36,7 @@ const TABS: { id: DataSource; label: string; icon: string; badge?: string }[] = 
   { id: "shopify", label: "Shopify", icon: "🛒", badge: "API" },
   { id: "stripe", label: "Stripe", icon: "💳", badge: "API" },
   { id: "scenario", label: "Scenario", icon: "🧪" },
-  { id: "apify", label: "Apify Intel", icon: "🕷️", badge: "$500" },
+  { id: "apify", label: "Apify Intel", icon: "🕷️" },
 ];
 
 export default function DataSourcePanel({ onDataReady, onApifyResults, isRunning }: Props) {
@@ -737,7 +737,6 @@ function ApifyTab({ onApifyResults, setLoading, setError, setSuccess, loading }:
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 mb-1">
-        <span className="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-full">$500 Prize</span>
         <p className="text-xs text-slate-400">Web scraping for GTM competitive intelligence via Apify</p>
       </div>
 
