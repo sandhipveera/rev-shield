@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
 // ---------------------------------------------------------------------------
 async function scrapeCompetitorPricing(token: string, urls: string[]): Promise<NextResponse> {
   // Use Apify's Cheerio Scraper for lightweight extraction
-  const actorId = "apify/cheerio-scraper";
+  const actorId = "apify~cheerio-scraper";
 
   const input = {
     startUrls: urls.map((url) => ({ url })),
@@ -125,7 +125,7 @@ async function scrapeCompetitorPricing(token: string, urls: string[]): Promise<N
 // Landing Page Health Check
 // ---------------------------------------------------------------------------
 async function checkLandingPageHealth(token: string, urls: string[]): Promise<NextResponse> {
-  const actorId = "apify/cheerio-scraper";
+  const actorId = "apify~cheerio-scraper";
 
   const input = {
     startUrls: urls.map((url) => ({ url })),
@@ -186,7 +186,7 @@ async function checkLandingPageHealth(token: string, urls: string[]): Promise<Ne
 // Review Sentiment Scraping
 // ---------------------------------------------------------------------------
 async function scrapeReviewSentiment(token: string, urls: string[]): Promise<NextResponse> {
-  const actorId = "apify/cheerio-scraper";
+  const actorId = "apify~cheerio-scraper";
 
   const input = {
     startUrls: urls.map((url) => ({ url })),
